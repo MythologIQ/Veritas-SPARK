@@ -30,6 +30,15 @@ hex = "0.4"
 
 [dev-dependencies]
 tokio-test = "0.4"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "ipc_throughput"
+harness = false
+
+[[bench]]
+name = "scheduler_throughput"
+harness = false
 
 [profile.release]
 opt-level = 3

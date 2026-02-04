@@ -4,11 +4,14 @@
 //! This is the ONLY external interface - no HTTP/REST/WebSocket allowed.
 
 mod auth;
+pub mod encoding;
 mod handler;
-mod protocol;
+pub mod protocol;
 
 pub use auth::{AuthError, SessionAuth, SessionToken};
+pub use encoding::{get_encoder, TokenEncoder, V1Encoder};
 pub use handler::{IpcHandler, IpcHandlerConfig};
 pub use protocol::{
-    InferenceRequest, InferenceResponse, IpcMessage, ProtocolError, RequestId,
+    decode_message, encode_message, InferenceRequest, InferenceResponse, IpcMessage,
+    ProtocolError, ProtocolVersion, RequestId,
 };

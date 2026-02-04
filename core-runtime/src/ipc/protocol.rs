@@ -5,6 +5,21 @@ use thiserror::Error;
 
 use crate::engine::InferenceParams;
 
+/// Protocol version for negotiating encoding strategies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ProtocolVersion {
+    /// V1: JSON encoding of token arrays (current default).
+    V1,
+    /// V2: Packed varint encoding (experimental).
+    V2,
+}
+
+impl Default for ProtocolVersion {
+    fn default() -> Self {
+        Self::V1
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum ProtocolError {
     #[error("Invalid message format: {0}")]
@@ -69,10 +84,20 @@ impl InferenceResponse {
 #[serde(tag = "type")]
 pub enum IpcMessage {
     #[serde(rename = "handshake")]
-    Handshake { token: String },
+    Handshake {
+        token: String,
+        /// Optional protocol version request. Defaults to V1 if not specified.
+        #[serde(default)]
+        protocol_version: Option<ProtocolVersion>,
+    },
 
     #[serde(rename = "handshake_ack")]
-    HandshakeAck { session_id: String },
+    HandshakeAck {
+        session_id: String,
+        /// Negotiated protocol version for this session.
+        #[serde(default)]
+        protocol_version: ProtocolVersion,
+    },
 
     #[serde(rename = "inference_request")]
     InferenceRequest(InferenceRequest),
