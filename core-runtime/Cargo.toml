@@ -1,6 +1,6 @@
 [package]
 name = "veritas-sdr"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Veritas SDR - Secure, Deterministic, Reliable inference runtime"
 license = "Apache-2.0"
@@ -24,6 +24,15 @@ candle-onnx = { version = "0.8", optional = true }
 
 # GGUF inference backend (llama-cpp-rs)
 llama-cpp-2 = { version = "0.1", optional = true }
+
+# CUDA support - safe CUDA bindings
+cudarc = { version = "0.12", optional = true }
+
+# Metal support for macOS (metal-rs is the primary Rust Metal crate)
+metal = { version = "0.28", optional = true }
+
+# Half-precision floating point for GPU operations
+half = { version = "2.4", features = ["num-traits"] }
 
 # Error handling
 thiserror = "1.0"
@@ -87,8 +96,8 @@ windows-sys = { version = "0.52", features = [
 default = []
 onnx = ["candle-core", "candle-onnx"]
 gguf = ["llama-cpp-2"]
-cuda = []  # GPU support via CUDA (requires CUDA toolkit)
-metal = []  # GPU support via Metal (macOS only)
+cuda = ["cudarc"]  # GPU support via CUDA (requires CUDA toolkit)
+metal = ["dep:metal"]  # GPU support via Metal (macOS only)
 full = ["onnx", "gguf"]
 gpu = ["cuda"]  # GPU support alias
 

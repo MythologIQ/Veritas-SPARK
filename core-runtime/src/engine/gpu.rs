@@ -11,7 +11,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 /// GPU Backend Types
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GpuBackend {
     /// NVIDIA CUDA backend
     Cuda,
@@ -149,28 +149,25 @@ impl GpuConfig {
 pub enum GpuError {
     #[error("No GPU devices available")]
     NoDevicesAvailable,
-    
+
     #[error("CUDA not available: {0}")]
     CudaNotAvailable(String),
-    
+
     #[error("Metal not available: {0}")]
     MetalNotAvailable(String),
-    
+
     #[error("Device not found: {0}")]
     DeviceNotFound(usize),
-    
+
     #[error("Out of GPU memory: required {required} bytes, available {available} bytes")]
-    OutOfMemory {
-        required: u64,
-        available: u64,
-    },
-    
+    OutOfMemory { required: u64, available: u64 },
+
     #[error("GPU operation failed: {0}")]
     OperationFailed(String),
-    
+
     #[error("Memory allocation failed: {0}")]
     AllocationFailed(String),
-    
+
     #[error("Kernel launch failed: {0}")]
     KernelLaunchFailed(String),
 }
@@ -193,28 +190,28 @@ impl GpuManager {
             config,
             active_device: None,
         };
-        
+
         manager.detect_devices()?;
         manager.select_device()?;
-        
+
         Ok(manager)
     }
 
     /// Detect available GPU devices
     pub fn detect_devices(&mut self) -> Result<(), GpuError> {
         self.devices.clear();
-        
+
         // Always add CPU as fallback
         self.devices.push(GpuDevice::cpu());
-        
-        // Detect CUDA devices
+
+        // Detect CUDA devices using the cuda backend module
         #[cfg(feature = "cuda")]
         {
             if let Ok(cuda_devices) = self.detect_cuda_devices() {
                 self.devices.extend(cuda_devices);
             }
         }
-        
+
         // Detect Metal devices (macOS only)
         #[cfg(all(feature = "metal", target_os = "macos"))]
         {
@@ -222,21 +219,22 @@ impl GpuManager {
                 self.devices.extend(metal_devices);
             }
         }
-        
+
         if self.devices.len() == 1 && self.config.backend != GpuBackend::Cpu {
             return Err(GpuError::NoDevicesAvailable);
         }
-        
+
         Ok(())
     }
 
     /// Select the active device based on configuration
     pub fn select_device(&mut self) -> Result<(), GpuError> {
-        let device = self.devices
+        let device = self
+            .devices
             .iter()
             .find(|d| d.backend == self.config.backend && d.index == self.config.device_index)
             .cloned();
-        
+
         match device {
             Some(d) => {
                 self.active_device = Some(Arc::new(d));
@@ -280,15 +278,18 @@ impl GpuManager {
 
     /// Allocate GPU memory
     pub fn allocate_memory(&self, size: u64) -> Result<GpuMemory, GpuError> {
-        let device = self.active_device.as_ref().ok_or(GpuError::NoDevicesAvailable)?;
-        
+        let device = self
+            .active_device
+            .as_ref()
+            .ok_or(GpuError::NoDevicesAvailable)?;
+
         if !device.has_memory(size) {
             return Err(GpuError::OutOfMemory {
                 required: size,
                 available: device.available_memory,
             });
         }
-        
+
         // Actual allocation would happen here with CUDA/Metal bindings
         Ok(GpuMemory {
             size,
@@ -297,20 +298,40 @@ impl GpuManager {
         })
     }
 
-    /// Detect CUDA devices (stub - requires cuda crate)
+    /// Detect CUDA devices using cudarc
     #[cfg(feature = "cuda")]
     fn detect_cuda_devices(&self) -> Result<Vec<GpuDevice>, GpuError> {
-        // This would use the cuda crate to detect devices
-        // For now, return empty vec
-        Ok(Vec::new())
+        use crate::engine::cuda::CudaBackend;
+
+        match CudaBackend::new() {
+            Ok(cuda_backend) => {
+                let devices: Vec<GpuDevice> = cuda_backend
+                    .devices()
+                    .iter()
+                    .map(|info| info.device.clone())
+                    .collect();
+                Ok(devices)
+            }
+            Err(_) => Ok(Vec::new()),
+        }
     }
 
-    /// Detect Metal devices (stub - requires metal crate)
+    /// Detect Metal devices using metal crate
     #[cfg(all(feature = "metal", target_os = "macos"))]
     fn detect_metal_devices(&self) -> Result<Vec<GpuDevice>, GpuError> {
-        // This would use the metal crate to detect devices
-        // For now, return empty vec
-        Ok(Vec::new())
+        use crate::engine::metal::MetalBackend;
+
+        match MetalBackend::new() {
+            Ok(metal_backend) => {
+                let devices: Vec<GpuDevice> = metal_backend
+                    .devices()
+                    .iter()
+                    .map(|info| info.device.clone())
+                    .collect();
+                Ok(devices)
+            }
+            Err(_) => Ok(Vec::new()),
+        }
     }
 }
 
@@ -366,16 +387,16 @@ impl GpuMemoryPool {
                 available: self.max_size - self.total_allocated,
             });
         }
-        
+
         let memory = GpuMemory {
             size,
             device: self.device.clone(),
             ptr: std::ptr::null_mut(),
         };
-        
+
         self.blocks.push(memory);
         self.total_allocated += size;
-        
+
         Ok(self.blocks.last().unwrap())
     }
 
@@ -432,7 +453,7 @@ mod tests {
     fn test_gpu_manager_cpu_only() {
         let config = GpuConfig::cpu();
         let manager = GpuManager::new(config).unwrap();
-        
+
         assert!(manager.active_device().is_some());
         assert_eq!(manager.active_device().unwrap().backend, GpuBackend::Cpu);
     }
@@ -441,7 +462,7 @@ mod tests {
     fn test_gpu_memory_pool() {
         let device = Arc::new(GpuDevice::cpu());
         let mut pool = GpuMemoryPool::new(device, 1024);
-        
+
         let mem = pool.allocate(512).unwrap();
         assert_eq!(mem.size, 512);
         assert_eq!(pool.utilization(), 0.5);
@@ -451,10 +472,10 @@ mod tests {
     fn test_gpu_memory_pool_out_of_memory() {
         let device = Arc::new(GpuDevice::cpu());
         let mut pool = GpuMemoryPool::new(device, 1024);
-        
+
         pool.allocate(512).unwrap();
         let result = pool.allocate(1024);
-        
+
         assert!(matches!(result, Err(GpuError::OutOfMemory { .. })));
     }
 }
