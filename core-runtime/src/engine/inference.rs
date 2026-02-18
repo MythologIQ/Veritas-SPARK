@@ -96,14 +96,26 @@ impl InferenceEngine {
             });
         }
 
-        // Development mode: generate mock tokens proportional to input
+        // Development mode: echo input with mock response suffix
         // TODO: Replace with actual inference via candle/llama-cpp when model integration is complete
-        let generated_count = params.max_tokens.min(input_tokens.len().saturating_add(10));
-        let output_tokens: Vec<u32> = (0..generated_count as u32).collect();
+        let generated_count = params.max_tokens.min(input_tokens.len().saturating_add(20));
 
+        // Generate readable ASCII: "[MOCK:" + echoed input subset + "]"
+        let mock_prefix: Vec<u32> = "[MOCK:".chars().map(|c| c as u32).collect();
+        let mock_suffix: Vec<u32> = "]".chars().map(|c| c as u32).collect();
+
+        let echo_len = generated_count.saturating_sub(mock_prefix.len() + mock_suffix.len());
+        let echoed: Vec<u32> = input_tokens.iter().take(echo_len).copied().collect();
+
+        let mut output_tokens = Vec::with_capacity(generated_count);
+        output_tokens.extend(&mock_prefix);
+        output_tokens.extend(&echoed);
+        output_tokens.extend(&mock_suffix);
+
+        let token_count = output_tokens.len();
         Ok(InferenceResult {
             output_tokens,
-            tokens_generated: generated_count,
+            tokens_generated: token_count,
             finished: true,
         })
     }
