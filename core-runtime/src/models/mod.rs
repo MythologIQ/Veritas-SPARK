@@ -4,6 +4,7 @@
 
 pub mod manifest;
 pub mod pool;
+pub mod smart_loader;
 
 mod drain;
 mod loader;
@@ -23,10 +24,13 @@ pub use history::{VersionHistory, VersionHistoryEntry, VersionSource};
 pub use loader::{LoadError, MappedModel, ModelLoader, ModelMetadata, ModelPath};
 pub use manifest::{ModelArchitecture, ModelCapability, ModelManifest};
 pub use persistence::{PersistenceError, PersistedModel, RegistryPersistence, RegistryState};
-pub use pool::{ModelPool, ModelTier, PoolConfig, PoolError, PoolMetrics, PoolStatus, SwitchResult};
+pub use pool::{ModelPool, PoolConfig, PoolError, PoolMetrics, PoolStatus, SwitchResult};
+pub use pool::ModelTier as PoolModelTier;
 pub use preload::{ModelPreloader, PreloadError, PreloadedModel};
 pub use registry::{LoadedModelInfo, LoadedModelState, ModelHandle, ModelRegistry};
 pub use router::{ModelRouter, RouterError};
 pub use search::{ModelQuery, ModelQueryBuilder, ModelSearchResult};
+pub use smart_loader::{LoadHint, SmartLoader, SmartLoaderConfig, SmartLoaderError, SmartLoaderMetrics, SmartLoaderStatus};
+pub use smart_loader::ModelTier as SmartModelTier;
 pub use swap::{SwapError, SwapManager, SwapResult};
 pub use version::{ModelVersion, VersionRange};
