@@ -1,41 +1,69 @@
-# GG-CORE
+<p align="center">
+  <img src="docs/assets/gg-core-logo.png" alt="GG-CORE Logo" width="200">
+</p>
 
-**GG-CORE** (Greatest Good - Contained Offline Restricted Execution)
+<h1 align="center">GG-CORE</h1>
 
-A security-first inference runtime for air-gapped and compliance-sensitive environments.
+<p align="center">
+  <strong>Greatest Good - Contained Offline Restricted Execution</strong><br>
+  A security-first inference runtime for air-gapped and compliance-sensitive environments.
+</p>
 
-[![Version](https://img.shields.io/badge/Version-0.8.1-orange.svg)](CHANGELOG.md)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Security](https://img.shields.io/badge/Security-Hardened-brightgreen.svg)](docs/security/THREAT_MODEL.md)
-[![Tests](https://img.shields.io/badge/Tests-424-blue.svg)](docs/testing/)
-[![E2E](https://img.shields.io/badge/E2E-Verified-brightgreen.svg)](core-runtime/tests/e2e_model_test.rs)
+<p align="center">
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-0.8.1-orange.svg" alt="Version"></a>
+  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
+  <a href="docs/security/THREAT_MODEL.md"><img src="https://img.shields.io/badge/Security-Hardened-brightgreen.svg" alt="Security"></a>
+  <a href="docs/testing/"><img src="https://img.shields.io/badge/Tests-424-blue.svg" alt="Tests"></a>
+  <a href="core-runtime/tests/e2e_model_test.rs"><img src="https://img.shields.io/badge/E2E-Verified-brightgreen.svg" alt="E2E"></a>
+</p>
 
 ---
 
 ## Why GG-CORE?
 
-### ⚡Up to 27,000x Faster Infrastructure
+### Security & Trust Comparison
 
-| Runtime | Overhead | vs GG-CORE |
-|---------|----------|----------------|
-| **GG-CORE** | **361 ns** | — |
-| Ollama | 1-10 ms | 2,770x - 27,700x slower |
-| llama.cpp server | 0.5-5 ms | 1,385x - 13,850x slower |
-| vLLM | 0.6-2.3 ms | 1,660x - 6,370x slower |
+| Feature | GG-CORE | Ollama | llama.cpp | vLLM |
+|---------|---------|--------|-----------|------|
+| **Network isolation** | No network stack | HTTP server | HTTP server | HTTP server |
+| **Memory safety** | Rust (compile-time) | Go + C++ | C++ | Python + C++ |
+| **Model encryption** | AES-256-GCM | None | None | None |
+| **Prompt injection** | 55+ patterns | None | None | None |
+| **PII detection** | 13 types + redaction | None | None | None |
+| **Audit logging** | SIEM-ready, 13 events | Basic | None | Basic |
+| **Air-gap ready** | Yes | No | Partial | No |
 
-Zero HTTP overhead. Named pipes only. Sub-microsecond dispatch.
+### Deployment Comparison
 
-### 🔒 Zero-Trust Security by Design
+| Aspect | GG-CORE | Ollama | llama.cpp | vLLM |
+|--------|---------|--------|-----------|------|
+| **Distribution** | Single binary | Binary + models | Binary | Python + CUDA |
+| **Dependencies** | None | None | None | PyTorch, CUDA |
+| **Integration** | Library / IPC | HTTP API | HTTP API | HTTP API |
+| **Container size** | ~50 MB | ~1 GB | ~100 MB | ~10 GB |
+| **Startup time** | <1s | 2-5s | 1-2s | 10-30s |
 
-| Threat | Mitigation |
-|--------|------------|
-| Network attacks | **No network stack compiled in** |
-| Prompt injection | 55+ patterns, Aho-Corasick matching |
-| Data exfiltration | No telemetry, no external calls |
-| Memory exploits | Rust memory safety, no unsafe in core |
-| Model tampering | AES-256-GCM encryption, PBKDF2 keys |
+### Performance Comparison
 
-Air-gapped deployments. FIPS-ready cryptography. Full audit logging.
+| Metric | GG-CORE | Ollama | llama.cpp | vLLM |
+|--------|---------|--------|-----------|------|
+| **Inference engine** | llama.cpp | llama.cpp | Native | Custom |
+| **CPU tok/s (7B Q4)** | ~4-10* | ~4-10 | ~4-10 | N/A |
+| **Integration overhead** | 361 ns (IPC) | 1-10 ms (HTTP) | 0.5-5 ms | 0.6-2.3 ms |
+| **Memory overhead** | 1.35x model | 1.5x+ model | 1.3x model | 2x+ model |
+| **Speculative decoding** | Yes | No | Yes | Yes |
+
+*Same llama.cpp backend = comparable inference speed. GG-CORE advantage is security + integration.
+
+### Best For
+
+| Use Case | Recommended |
+|----------|-------------|
+| Air-gapped / compliance | **GG-CORE** |
+| Desktop app embedding | **GG-CORE** |
+| Quick local testing | Ollama |
+| GPU batch serving | vLLM |
+| Custom C++ integration | llama.cpp |
 
 ---
 
@@ -47,11 +75,11 @@ GG-CORE is a sandboxed, offline inference engine providing comprehensive securit
 
 | Feature | Description |
 |---------|-------------|
-| **27,000x Faster** | 361ns overhead vs 1-10ms for HTTP-based runtimes |
-| **Zero Network** | No network stack, no HTTP, no telemetry—air-gapped by design |
+| **Air-Gap Native** | No network stack compiled in—physically cannot phone home |
+| **Security Built-In** | Prompt injection, PII detection, model encryption, audit logging |
 | **Rust Memory Safety** | No unsafe code in core paths, compile-time guarantees |
-| **Compliance Ready** | Audit logging, PII detection, AES-256-GCM, FIPS-ready |
-| **Single Binary** | No installation, no dependencies, copy and run |
+| **Compliance Ready** | SIEM integration, AES-256-GCM, FIPS-ready cryptography |
+| **Embeddable** | Library + IPC integration, not just another HTTP server |
 
 ### Verified Claims
 
@@ -60,10 +88,9 @@ GG-CORE is a sandboxed, offline inference engine providing comprehensive securit
 | No network dependencies       | Cargo.toml audit, forbidden dependency list |
 | Single binary distribution    | MIT/Apache dependencies, static linking     |
 | Rust memory safety            | Language guarantee, no unsafe in core paths |
-| 361ns infrastructure overhead | Benchmark verified                          |
 | 424 tests (100% pass rate)    | Full test suite passing                     |
 | No mock fallbacks             | All paths require real loaded models        |
-| **E2E inference verified**    | Qwen 2.5 0.5B generates real text (~40 tok/s CPU) |
+| **E2E inference verified**    | Qwen 2.5 0.5B @ 40 tok/s CPU (i7-7700K)     |
 
 ---
 
@@ -182,24 +209,16 @@ See [Threat Model](docs/security/THREAT_MODEL.md) for detailed security analysis
 
 ## Performance
 
-### Infrastructure Overhead
+### Inference Throughput
 
-| Component          | Latency     | Throughput      | Status            |
-| ------------------ | ----------- | --------------- | ----------------- |
-| IPC Encode         | 140 ns      | 104-135 Melem/s | ✅ Excellent      |
-| IPC Decode         | 190 ns      | 23.6 Melem/s    | ✅ Excellent      |
-| Memory Pool        | 30 ns       | -               | ✅ Excellent      |
-| Scheduler          | 0.67 ns     | 2-5 Melem/s     | ✅ Excellent      |
-| **Total Overhead** | **~361 ns** | -               | **94% optimized** |
+| Model | Hardware | Throughput | Notes |
+|-------|----------|------------|-------|
+| Qwen 2.5 0.5B Q4 | i7-7700K | **40 tok/s** | Verified baseline |
+| Qwen 2.5 0.5B Q4 | Ryzen 5900X | ~80 tok/s | Estimated |
+| Qwen 2.5 7B Q4 | i7-7700K | ~4 tok/s | Estimated |
+| Qwen 2.5 7B Q4 | i9-13900K | ~10 tok/s | Estimated |
 
-### vs HTTP-Based Runtimes
-
-| Runtime          | Infrastructure Overhead | GG-CORE Advantage       |
-| ---------------- | ----------------------- | --------------------------- |
-| **GG-CORE**  | 361 ns                  | Baseline                    |
-| Ollama           | 1-10 ms                 | **2,770x - 27,700x faster** |
-| llama.cpp server | 0.5-5 ms                | **1,385x - 13,850x faster** |
-| vLLM             | 0.6-2.3 ms              | **1,660x - 6,370x faster**  |
+*Uses llama.cpp backend. See [BENCHMARKS.md](docs/BENCHMARKS.md) for full performance matrix.*
 
 ### End-to-End Metrics
 
