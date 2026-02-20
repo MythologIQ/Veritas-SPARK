@@ -5,16 +5,16 @@
 #   kubectl apply -f bluegreen-example.yaml
 #
 # To switch traffic:
-#   kubectl patch veritasenvironment veritas-sdr-bluegreen \
+#   kubectl patch veritasenvironment veritas-spark-bluegreen \
 #     --type=merge -p '{"spec":{"active":"green"}}'
 
 apiVersion: veritas.hearthlink.ai/v1alpha1
 kind: VeritasEnvironment
 metadata:
-  name: veritas-sdr-bluegreen
+  name: veritas-spark-bluegreen
   namespace: veritas-system
   labels:
-    app.kubernetes.io/name: veritas-sdr
+    app.kubernetes.io/name: veritas-spark
     app.kubernetes.io/component: bluegreen
 spec:
   # Blue environment (currently active)
@@ -71,7 +71,7 @@ spec:
 apiVersion: veritas.hearthlink.ai/v1alpha1
 kind: VeritasEnvironment
 metadata:
-  name: veritas-sdr-bluegreen-gradual
+  name: veritas-spark-bluegreen-gradual
   namespace: veritas-system
 spec:
   blue:
@@ -118,7 +118,7 @@ spec:
 apiVersion: veritas.hearthlink.ai/v1alpha1
 kind: VeritasEnvironment
 metadata:
-  name: veritas-sdr-bluegreen-minimal
+  name: veritas-spark-bluegreen-minimal
   namespace: veritas-system
 spec:
   blue:

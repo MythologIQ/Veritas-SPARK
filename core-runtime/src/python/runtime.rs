@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Python Runtime class wrapping the Rust runtime
@@ -13,7 +13,7 @@ use super::session::{AsyncSession, Session};
 use crate::ipc::SessionToken;
 use crate::Runtime as CoreRuntime;
 
-/// Main runtime entry point for Veritas SDR
+/// Main runtime entry point for Veritas SPARK
 ///
 /// Creates and manages the inference runtime with authentication.
 ///

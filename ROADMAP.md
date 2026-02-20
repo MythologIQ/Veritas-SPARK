@@ -1,4 +1,4 @@
-# Veritas SDR Feature Roadmap
+# Veritas SPARK (Secure Performance-Accelerated Runtime Kernel) Feature Roadmap
 
 **Last Updated:** 2026-02-19
 **Version:** 0.6.5
@@ -7,7 +7,7 @@
 
 ## Current Status: Pre-Production
 
-Veritas SDR is in pre-production status. Core functionality is complete and tested, but production deployment requires additional work.
+Veritas SPARK is in pre-production status. Core functionality is complete and tested, but production deployment requires additional work.
 
 ---
 
@@ -125,7 +125,7 @@ Veritas SDR is in pre-production status. Core functionality is complete and test
 
 - [`ffi/`](core-runtime/src/ffi/) - C API implementation (8 files)
 - [`python/`](core-runtime/src/python/) - Python bindings (6 files)
-- [`include/veritas_sdr.h`](core-runtime/include/veritas_sdr.h) - Generated C header
+- [`include/veritas_spark.h`](core-runtime/include/veritas_spark.h) - Generated C header
 - [`python/`](core-runtime/python/) - Python package structure
 
 **Status:** Complete
@@ -172,7 +172,7 @@ Veritas SDR is in pre-production status. Core functionality is complete and test
 ### CLI Health Probes (Alcatraz-compliant)
 
 - [x] Exec-based health probes for K8s (NO HTTP)
-- [x] `veritas-sdr health|live|ready` subcommands
+- [x] `veritas-spark health|live|ready` subcommands
 - [x] IPC client for CLI-to-runtime communication
 
 ### CLI Architecture
@@ -217,7 +217,7 @@ Veritas SDR is in pre-production status. Core functionality is complete and test
 
 - [`k8s/types.rs`](core-runtime/src/k8s/types.rs) - CRD Rust types
 - [`k8s/crds/`](k8s/crds/) - CRD YAML definitions
-- [`k8s/helm/veritas-sdr/`](k8s/helm/veritas-sdr/) - Helm chart
+- [`k8s/helm/veritas-spark/`](k8s/helm/veritas-spark/) - Helm chart
 
 **Status:** Complete
 
@@ -270,7 +270,7 @@ Veritas SDR is in pre-production status. Core functionality is complete and test
 
 ### Build System Improvements
 
-- [x] Binary renamed to `veritas-sdr-cli` (fixes PDB collision)
+- [x] Binary renamed to `veritas-spark-cli` (fixes PDB collision)
 - [x] Removed bincode (incompatible with internally-tagged enums)
 - [x] Version-pinned llama-cpp-2 to 0.1.133
 - [x] Added encoding_rs for UTF-8 token decoding
@@ -283,18 +283,37 @@ Veritas SDR is in pre-production status. Core functionality is complete and test
 
 ---
 
-## Planned Features (v0.7.0)
+## v0.7.0 - Streaming & Rebrand (Complete)
 
-### Security
+### Delivered
+
+- [x] Token-by-token streaming inference via IPC
+- [x] Mid-stream cancellation support
+- [x] CLI `infer` command with `--stream` flag
+- [x] SPARK rebrand (Secure Performance-Accelerated Runtime Kernel)
+- [x] Canary deployment automation
+- [x] Blue-green deployment support
+
+**Status:** Complete
+
+**Test Coverage:** 438 unit tests (100% pass rate)
+
+---
+
+## Post-Traction (v1.0+)
+
+*Deferred until market validation*
+
+### Security (When Funded)
 
 - [ ] Independent security audit
-- [ ] SOC 2 compliance preparation
-- [ ] FIPS 140-2 consideration
+- [ ] SOC 2 Type II certification
+- [ ] FIPS 140-3 certification
 
-### Operations
+### Enterprise
 
-- [ ] Canary deployment automation
-- [ ] Blue-green deployment support
+- [ ] Multi-tenant isolation
+- [ ] Audit logging compliance
 
 ---
 
@@ -326,7 +345,7 @@ Veritas SDR is in pre-production status. Core functionality is complete and test
 | **0.5.0** | Complete  | Enterprise features                      |
 | **0.6.0** | Complete  | Functional GGUF backend, IPC server      |
 | **0.6.5** | Complete  | Mock elimination, text-based IPC         |
-| **0.7.0** | Planned   | Security audit, deployments              |
+| **0.7.0** | Complete  | Streaming inference, SPARK rebrand       |
 | **1.0.0** | Planned   | Production stable release                |
 
 ---
@@ -352,5 +371,5 @@ We welcome contributions! See [CLA.md](CLA.md) for contributor license agreement
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors  
+Copyright 2024-2026 Veritas SPARK Contributors  
 Licensed under the Apache License, Version 2.0

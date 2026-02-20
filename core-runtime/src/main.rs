@@ -1,4 +1,4 @@
-//! Veritas SDR Runtime entry point.
+//! Veritas SPARK Runtime entry point.
 //!
 //! Bootstraps the sandboxed inference engine with:
 //! - FIPS 140-3 power-on self-tests (fail-fast)
@@ -8,16 +8,17 @@
 //!
 //! ## CLI Subcommands
 //!
-//! - `veritas-sdr` or `veritas-sdr serve` - Run IPC server (default)
-//! - `veritas-sdr health` - Full health check (exit 0/1)
-//! - `veritas-sdr live` - Liveness probe (exit 0/1)
-//! - `veritas-sdr ready` - Readiness probe (exit 0/1)
+//! - `veritas-spark` or `veritas-spark serve` - Run IPC server (default)
+//! - `veritas-spark health` - Full health check (exit 0/1)
+//! - `veritas-spark live` - Liveness probe (exit 0/1)
+//! - `veritas-spark ready` - Readiness probe (exit 0/1)
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use veritas_sdr::cli::{get_socket_path, run_health, run_liveness, run_readiness, run_status};
+use veritas_sdr::cli::{get_socket_path, run_health, run_liveness, run_readiness, run_status, CliIpcClient};
+use veritas_sdr::engine::InferenceParams;
 use veritas_sdr::ipc::server;
 use veritas_sdr::security::fips_tests;
 use veritas_sdr::shutdown::ShutdownResult;
@@ -73,7 +74,7 @@ async fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         "version" | "--version" | "-V" => {
-            println!("veritas-sdr {}", env!("CARGO_PKG_VERSION"));
+            println!("veritas-spark {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
         }
         "status" => {
@@ -82,10 +83,14 @@ async fn main() -> ExitCode {
             let code = run_status(&socket_path, json_output).await;
             ExitCode::from(code as u8)
         }
+        "infer" => {
+            let code = run_inference(&args).await;
+            ExitCode::from(code as u8)
+        }
         "verify" => {
             // TODO: Implement verify command
             eprintln!(
-                "Verify command not yet implemented. Use 'veritas-sdr health' for health checks."
+                "Verify command not yet implemented. Use 'veritas-spark health' for health checks."
             );
             ExitCode::from(2u8)
         }
@@ -128,13 +133,14 @@ async fn main() -> ExitCode {
 fn print_usage() {
     let version = env!("CARGO_PKG_VERSION");
     eprintln!(
-        "Veritas SDR - Secure LLM Inference Runtime v{}
+        "Veritas SPARK - Secure Performance-Accelerated Runtime Kernel v{}
 
 USAGE:
-    veritas-sdr [COMMAND] [OPTIONS]
+    veritas-spark [COMMAND] [OPTIONS]
 
 COMMANDS:
     serve        Run the IPC server (default when no command given)
+    infer        Run inference on a model (supports streaming)
     health       Full health check (exit 0 if healthy, 1 if unhealthy)
     live         Liveness probe for Kubernetes (exit 0 if alive)
     ready        Readiness probe for Kubernetes (exit 0 if ready)
@@ -152,18 +158,20 @@ OPTIONS:
     --socket PATH  Override IPC socket path
 
 EXAMPLES:
-    veritas-sdr                          # Run IPC server (default)
-    veritas-sdr serve                    # Explicitly run IPC server
-    veritas-sdr health                   # Full health check
-    veritas-sdr live                     # Liveness probe
-    veritas-sdr ready                    # Readiness probe
-    veritas-sdr status                   # Show system status
-    veritas-sdr models list              # List loaded models
-    veritas-sdr config validate          # Validate configuration
-    veritas-sdr --socket /custom/path    # Use custom socket path
+    veritas-spark                          # Run IPC server (default)
+    veritas-spark serve                    # Explicitly run IPC server
+    veritas-spark infer --model phi-3 --prompt \"Hello\"  # Run inference
+    veritas-spark infer --model phi-3 --prompt \"Hi\" --stream  # Streaming
+    veritas-spark health                   # Full health check
+    veritas-spark live                     # Liveness probe
+    veritas-spark ready                    # Readiness probe
+    veritas-spark status                   # Show system status
+    veritas-spark models list              # List loaded models
+    veritas-spark config validate          # Validate configuration
+    veritas-spark --socket /custom/path    # Use custom socket path
 
 ENVIRONMENT:
-    VERITAS_SOCKET_PATH  IPC socket path (default: /var/run/veritas/veritas-sdr.sock on Unix)
+    VERITAS_SOCKET_PATH  IPC socket path (default: /var/run/veritas/veritas-spark.sock on Unix)
     CORE_AUTH_TOKEN      Authentication token for server mode
     RUST_LOG             Log level (debug, info, warn, error)
     VERITAS_ENV          Environment (development, staging, production)
@@ -175,11 +183,11 @@ EXIT CODES:
     3  Connection error
 
 DOCUMENTATION:
-    https://docs.veritas-sdr.io
+    https://docs.veritas-spark.io
 
 SUPPORT:
-    GitHub Issues: https://github.com/veritas-sdr/core/issues
-    Community:     https://slack.veritas-sdr.io
+    GitHub Issues: https://github.com/veritas-spark/core/issues
+    Community:     https://slack.veritas-spark.io
 ",
         version
     );
@@ -190,10 +198,10 @@ fn print_command_help(command: &str) {
     match command {
         "serve" => {
             eprintln!(
-                "veritas-sdr serve - Run the IPC server
+                "veritas-spark serve - Run the IPC server
 
 USAGE:
-    veritas-sdr serve [OPTIONS]
+    veritas-spark serve [OPTIONS]
 
 OPTIONS:
     --socket PATH     Override IPC socket path
@@ -201,7 +209,7 @@ OPTIONS:
     --auth-token TKN  Set authentication token
 
 DESCRIPTION:
-    Starts the Veritas SDR IPC server, which handles inference requests
+    Starts the Veritas SPARK IPC server, which handles inference requests
     through inter-process communication. This is the default command when
     no command is specified.
 
@@ -209,18 +217,18 @@ DESCRIPTION:
     and will fail-fast if any cryptographic self-test fails.
 
 EXAMPLES:
-    veritas-sdr serve
-    veritas-sdr serve --socket /custom/veritas.sock
-    veritas-sdr serve --config /etc/veritas/config.toml
+    veritas-spark serve
+    veritas-spark serve --socket /custom/veritas.sock
+    veritas-spark serve --config /etc/veritas/config.toml
 "
             );
         }
         "health" => {
             eprintln!(
-                "veritas-sdr health - Full health check
+                "veritas-spark health - Full health check
 
 USAGE:
-    veritas-sdr health [OPTIONS]
+    veritas-spark health [OPTIONS]
 
 OPTIONS:
     --socket PATH  Override IPC socket path
@@ -228,7 +236,7 @@ OPTIONS:
     --json         Output in JSON format
 
 DESCRIPTION:
-    Performs a comprehensive health check of the Veritas SDR runtime.
+    Performs a comprehensive health check of the Veritas SPARK runtime.
     Checks model loading, memory status, and inference capability.
 
 EXIT CODES:
@@ -237,18 +245,18 @@ EXIT CODES:
     3  Connection error
 
 EXAMPLES:
-    veritas-sdr health
-    veritas-sdr health --json
-    veritas-sdr health --timeout 10
+    veritas-spark health
+    veritas-spark health --json
+    veritas-spark health --timeout 10
 "
             );
         }
         "live" | "liveness" => {
             eprintln!(
-                "veritas-sdr live - Liveness probe
+                "veritas-spark live - Liveness probe
 
 USAGE:
-    veritas-sdr live [OPTIONS]
+    veritas-spark live [OPTIONS]
 
 OPTIONS:
     --socket PATH  Override IPC socket path
@@ -265,7 +273,7 @@ EXIT CODES:
 KUBERNETES USAGE:
     livenessProbe:
       exec:
-        command: [veritas-sdr, live]
+        command: [veritas-spark, live]
       initialDelaySeconds: 30
       periodSeconds: 10
 "
@@ -273,10 +281,10 @@ KUBERNETES USAGE:
         }
         "ready" | "readiness" => {
             eprintln!(
-                "veritas-sdr ready - Readiness probe
+                "veritas-spark ready - Readiness probe
 
 USAGE:
-    veritas-sdr ready [OPTIONS]
+    veritas-spark ready [OPTIONS]
 
 OPTIONS:
     --socket PATH  Override IPC socket path
@@ -294,7 +302,7 @@ EXIT CODES:
 KUBERNETES USAGE:
     readinessProbe:
       exec:
-        command: [veritas-sdr, ready]
+        command: [veritas-spark, ready]
       initialDelaySeconds: 60
       periodSeconds: 5
 "
@@ -302,10 +310,10 @@ KUBERNETES USAGE:
         }
         "status" => {
             eprintln!(
-                "veritas-sdr status - Show system status
+                "veritas-spark status - Show system status
 
 USAGE:
-    veritas-sdr status [OPTIONS]
+    veritas-spark status [OPTIONS]
 
 OPTIONS:
     --socket PATH  Override IPC socket path
@@ -321,18 +329,48 @@ DESCRIPTION:
     - Recent events
 
 EXAMPLES:
-    veritas-sdr status
-    veritas-sdr status --json
-    veritas-sdr status --watch
+    veritas-spark status
+    veritas-spark status --json
+    veritas-spark status --watch
+"
+            );
+        }
+        "infer" => {
+            eprintln!(
+                "veritas-spark infer - Run inference
+
+USAGE:
+    veritas-spark infer --model <MODEL> --prompt <PROMPT> [OPTIONS]
+
+OPTIONS:
+    --model <MODEL>      Model ID to use for inference
+    --prompt <PROMPT>    Input prompt for generation
+    --max-tokens <N>     Maximum tokens to generate (default: 256)
+    --stream             Enable token-by-token streaming output
+    --socket PATH        Override IPC socket path
+
+DESCRIPTION:
+    Sends an inference request to the running Veritas SPARK server
+    and prints the generated output. Use --stream for real-time
+    token streaming.
+
+EXIT CODES:
+    0  Inference completed successfully
+    1  Inference failed or connection error
+
+EXAMPLES:
+    veritas-spark infer --model phi-3 --prompt \"Hello, world!\"
+    veritas-spark infer --model phi-3 --prompt \"Count to 5\" --stream
+    veritas-spark infer --model qwen --prompt \"Hi\" --max-tokens 100
 "
             );
         }
         "verify" => {
             eprintln!(
-                "veritas-sdr verify - Verify deployment
+                "veritas-spark verify - Verify deployment
 
 USAGE:
-    veritas-sdr verify [OPTIONS]
+    veritas-spark verify [OPTIONS]
 
 OPTIONS:
     --socket PATH  Override IPC socket path
@@ -351,17 +389,17 @@ EXIT CODES:
     1  One or more checks failed
 
 EXAMPLES:
-    veritas-sdr verify
-    veritas-sdr verify --all
+    veritas-spark verify
+    veritas-spark verify --all
 "
             );
         }
         "models" => {
             eprintln!(
-                "veritas-sdr models - Manage models
+                "veritas-spark models - Manage models
 
 USAGE:
-    veritas-sdr models <SUBCOMMAND> [OPTIONS]
+    veritas-spark models <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     list           List loaded models
@@ -374,19 +412,19 @@ OPTIONS:
     --json         Output in JSON format
 
 EXAMPLES:
-    veritas-sdr models list
-    veritas-sdr models load llama-2-7b-chat
-    veritas-sdr models info llama-2-7b-chat
-    veritas-sdr models unload llama-2-7b-chat
+    veritas-spark models list
+    veritas-spark models load llama-2-7b-chat
+    veritas-spark models info llama-2-7b-chat
+    veritas-spark models unload llama-2-7b-chat
 "
             );
         }
         "config" => {
             eprintln!(
-                "veritas-sdr config - Manage configuration
+                "veritas-spark config - Manage configuration
 
 USAGE:
-    veritas-sdr config <SUBCOMMAND> [OPTIONS]
+    veritas-spark config <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     show           Show current configuration
@@ -398,15 +436,15 @@ OPTIONS:
     --file PATH    Configuration file path
 
 EXAMPLES:
-    veritas-sdr config show
-    veritas-sdr config validate --file values.yaml
-    veritas-sdr config defaults
+    veritas-spark config show
+    veritas-spark config validate --file values.yaml
+    veritas-spark config defaults
 "
             );
         }
         _ => {
             eprintln!(
-                "No detailed help available for '{}'. Use 'veritas-sdr help' for general usage.",
+                "No detailed help available for '{}'. Use 'veritas-spark help' for general usage.",
                 command
             );
         }
@@ -422,6 +460,87 @@ fn load_config() -> RuntimeConfig {
         session_timeout: Duration::from_secs(3600),
         max_context_length: 4096,
         ..Default::default()
+    }
+}
+
+/// Run the inference CLI command.
+async fn run_inference(args: &[String]) -> i32 {
+    let mut model_id = String::new();
+    let mut prompt = String::new();
+    let mut max_tokens = 256usize;
+    let mut stream = false;
+
+    // Parse arguments
+    let mut i = 2;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--model" => {
+                if i + 1 < args.len() {
+                    model_id = args[i + 1].clone();
+                    i += 2;
+                } else {
+                    eprintln!("Missing value for --model");
+                    return 1;
+                }
+            }
+            "--prompt" => {
+                if i + 1 < args.len() {
+                    prompt = args[i + 1].clone();
+                    i += 2;
+                } else {
+                    eprintln!("Missing value for --prompt");
+                    return 1;
+                }
+            }
+            "--max-tokens" => {
+                if i + 1 < args.len() {
+                    max_tokens = args[i + 1].parse().unwrap_or(256);
+                    i += 2;
+                } else {
+                    eprintln!("Missing value for --max-tokens");
+                    return 1;
+                }
+            }
+            "--stream" => {
+                stream = true;
+                i += 1;
+            }
+            _ => {
+                eprintln!("Unknown argument: {}", args[i]);
+                return 1;
+            }
+        }
+    }
+
+    if model_id.is_empty() || prompt.is_empty() {
+        eprintln!("Usage: veritas-spark infer --model <MODEL> --prompt <PROMPT> [--max-tokens N] [--stream]");
+        return 1;
+    }
+
+    let socket_path = get_socket_path();
+    let client = CliIpcClient::new(socket_path);
+    let params = InferenceParams {
+        max_tokens,
+        ..Default::default()
+    };
+
+    let result = if stream {
+        client.send_streaming_inference(&model_id, &prompt, &params).await
+    } else {
+        client.send_inference(&model_id, &prompt, &params).await
+    };
+
+    match result {
+        Ok(output) => {
+            if !stream {
+                println!("{}", output);
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            1
+        }
     }
 }
 

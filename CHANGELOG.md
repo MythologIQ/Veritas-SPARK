@@ -1,6 +1,55 @@
 # Changelog
 
-All notable changes to Veritas SDR are documented in this file.
+All notable changes to Veritas SPARK (Secure Performance-Accelerated Runtime Kernel) are documented in this file.
+
+## [0.7.0] - 2026-02-19
+
+### Streaming Inference & Rebrand
+
+This release introduces real token-by-token streaming inference and rebrands from "Veritas SDR" to "Veritas SPARK" (Secure Performance-Accelerated Runtime Kernel).
+
+#### Added
+
+- **Streaming Inference**: Token-by-token streaming via IPC with `stream: true` parameter
+- **Mid-Stream Cancellation**: Cancel active streaming requests with `CancelRequest` message
+- **CLI `infer` Command**: New CLI command for direct inference
+  - `veritas-spark infer --model <MODEL> --prompt <PROMPT>` - Single response
+  - `veritas-spark infer --model <MODEL> --prompt <PROMPT> --stream` - Streaming output
+- **IpcStreamBridge**: New adapter for sending streaming chunks to IPC clients
+- **StreamChunk.text Field**: Optional decoded text field for client display
+
+#### Changed
+
+- **Rebrand to SPARK**: All documentation, comments, and CLI references updated
+  - SDR → SPARK (Secure Performance-Accelerated Runtime Kernel)
+  - `veritas-sdr` → `veritas-spark` (CLI, socket paths, environment variables)
+  - `VERITAS_SDR_*` → `VERITAS_SPARK_*` (environment variables)
+- **E2E Test Scripts**: Updated to include streaming verification (steps 5-7)
+
+#### Wire Protocol
+
+New streaming protocol (backward compatible):
+
+```json
+// Request with stream: true
+{ "type": "inference_request", "request_id": 1, "model_id": "...", "prompt": "...", "parameters": { "stream": true } }
+
+// Multiple response chunks
+{ "type": "stream_chunk", "request_id": 1, "token": 15496, "text": "Hello", "is_final": false }
+{ "type": "stream_chunk", "request_id": 1, "token": 198, "text": "!", "is_final": true }
+
+// Cancel request
+{ "type": "cancel_request", "request_id": 1 }
+```
+
+#### Internal
+
+- `process_streaming()` in handler.rs for streaming inference coordination
+- `run_stream_sync()` for blocking task integration
+- Split read/write connection handling in server.rs
+- CancellationToken integration for mid-stream abort
+
+---
 
 ## [0.6.7] - 2026-02-19
 
@@ -55,4 +104,4 @@ This release focuses on production safety and fail-fast behavior for the Hearthl
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors
+Copyright 2024-2026 Veritas SPARK Contributors

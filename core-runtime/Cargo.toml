@@ -1,20 +1,21 @@
 [package]
 name = "veritas-sdr"
-version = "0.6.7"
+version = "0.7.0"
 edition = "2021"
-description = "Veritas SDR - Secure, Deterministic, Reliable inference runtime"
+description = "Veritas SPARK - Secure Performance-Accelerated Runtime Kernel for inference"
 license = "Apache-2.0"
 
 [lib]
 crate-type = ["rlib", "cdylib"]
 
 [[bin]]
-name = "veritas-sdr-cli"
+name = "veritas-spark-cli"
 path = "src/main.rs"
 
 [dependencies]
 # Async runtime
 tokio = { version = "1.35", features = ["rt-multi-thread", "sync", "time", "macros", "signal", "net", "io-util"] }
+tokio-util = "0.7"
 futures = "0.3"
 
 # Serialization for IPC
@@ -120,7 +121,7 @@ cuda = ["cudarc"]  # GPU support via CUDA (requires CUDA toolkit)
 metal = ["dep:metal"]  # GPU support via Metal (macOS only)
 full = ["onnx", "gguf"]
 gpu = ["cuda"]  # GPU support alias
-ffi = ["cbindgen"]  # C FFI support (generates veritas_sdr.h)
+ffi = ["cbindgen"]  # C FFI support (generates veritas_spark.h)
 python = ["pyo3", "pyo3-asyncio-0-21"]  # Python bindings via PyO3
 
 [build-dependencies]

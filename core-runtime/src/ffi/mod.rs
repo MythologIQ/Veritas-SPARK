@@ -1,7 +1,7 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! C Foreign Function Interface for Veritas SDR
+//! C Foreign Function Interface for Veritas SPARK
 //!
 //! Provides a stable C ABI for integration with non-Rust languages.
 //! All functions use error codes and thread-local error messages.

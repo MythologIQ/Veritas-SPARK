@@ -1,4 +1,4 @@
-# Veritas SDR Single GPU Values
+# Veritas SPARK Single GPU Values
 # Configuration for single GPU deployment
 # Suitable for: Production inference with single GPU, small workloads
 
@@ -8,7 +8,7 @@ replicaCount: 1
 
 # Container image configuration
 image:
-  repository: veritas-sdr/core
+  repository: veritas-spark/core
   pullPolicy: IfNotPresent
   tag: "0.6.5"
 
@@ -65,7 +65,7 @@ ingress:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: veritas-sdr-tls
+    - secretName: veritas-spark-tls
       hosts:
         - inference.example.com
 
@@ -235,7 +235,7 @@ podAnnotations:
 # Pod labels
 podLabels:
   app.kubernetes.io/component: inference
-  app.kubernetes.io/part-of: veritas-sdr
+  app.kubernetes.io/part-of: veritas-spark
 
 # Additional containers
 extraContainers: []

@@ -1,9 +1,9 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // Licensed under the Apache License, Version 2.0
 
 //! llama.cpp Direct Comparison Benchmark
 //!
-//! This benchmark compares Veritas SDR overhead against llama.cpp CLI directly.
+//! This benchmark compares Veritas SPARK overhead against llama.cpp CLI directly.
 //! This is the fair comparison - both use the same backend (llama.cpp).
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
@@ -67,11 +67,11 @@ fn bench_llama_cpp_cli(c: &mut Criterion) {
     group.finish();
 }
 
-/// Veritas SDR overhead benchmark
+/// Veritas SPARK overhead benchmark
 fn bench_veritas_sdr_overhead(c: &mut Criterion) {
     let mut group = c.benchmark_group("veritas_sdr_overhead");
 
-    // This would benchmark the actual Veritas SDR inference
+    // This would benchmark the actual Veritas SPARK inference
     // For now, we measure the infrastructure overhead
 
     group.throughput(Throughput::Elements(1));
@@ -86,6 +86,7 @@ fn bench_veritas_sdr_overhead(c: &mut Criterion) {
         let data = IpcMessage::StreamChunk(StreamChunk {
             request_id: RequestId(1),
             token: 12345,
+            text: None,
             is_final: false,
             error: Some("x".repeat(1000)), // Simulate 1KB payload
         });
@@ -105,6 +106,7 @@ fn bench_veritas_sdr_overhead(c: &mut Criterion) {
         let data = IpcMessage::StreamChunk(StreamChunk {
             request_id: RequestId(1),
             token: 12345,
+            text: None,
             is_final: false,
             error: Some("x".repeat(1000)),
         });
@@ -158,6 +160,7 @@ fn bench_total_overhead(c: &mut Criterion) {
         let data = IpcMessage::StreamChunk(StreamChunk {
             request_id: RequestId(1),
             token: 12345,
+            text: None,
             is_final: false,
             error: Some("x".repeat(1000)),
         });
@@ -179,7 +182,7 @@ fn bench_total_overhead(c: &mut Criterion) {
 /// Results summary
 fn print_comparison_summary() {
     println!("\n=== llama.cpp Direct Comparison Summary ===\n");
-    println!("This benchmark measures Veritas SDR overhead vs llama.cpp CLI.");
+    println!("This benchmark measures Veritas SPARK overhead vs llama.cpp CLI.");
     println!("\nExpected Results:");
     println!("| Component          | Expected Overhead |");
     println!("|--------------------|-------------------|");

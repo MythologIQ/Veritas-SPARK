@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Deployment debugging CLI commands.
@@ -10,12 +10,12 @@
 //! ## Usage
 //!
 //! ```bash
-//! veritas-sdr deployment status
-//! veritas-sdr canary inspect
-//! veritas-sdr bluegreen inspect
-//! veritas-sdr rollback --canary
-//! veritas-sdr rollback --bluegreen
-//! veritas-sdr rollback --force
+//! veritas-spark deployment status
+//! veritas-spark canary inspect
+//! veritas-spark bluegreen inspect
+//! veritas-spark rollback --canary
+//! veritas-spark rollback --bluegreen
+//! veritas-spark rollback --force
 //! ```
 
 use std::fmt;

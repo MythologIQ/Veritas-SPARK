@@ -24,13 +24,13 @@ This guide provides diagnostic procedures and resolution steps for common deploy
 
 ```bash
 # Overall deployment status
-veritas-sdr deployment status
+veritas-spark deployment status
 
 # Check all pod health
-kubectl get pods -l app=veritas-sdr -o wide
+kubectl get pods -l app=veritas-spark -o wide
 
 # Quick health check
-veritas-sdr health
+veritas-spark health
 
 # View recent events
 kubectl get events --sort-by=.lastTimestamp | tail -20
@@ -41,9 +41,9 @@ kubectl get events --sort-by=.lastTimestamp | tail -20
 | Check | Command | Healthy | Degraded | Critical |
 |-------|---------|---------|----------|----------|
 | Pods | kubectl get pods | All Running | Some NotReady | CrashLoopBackOff |
-| Health | veritas-sdr health | Exit 0 | - | Exit 1 |
+| Health | veritas-spark health | Exit 0 | - | Exit 1 |
 | Metrics | curl :9090/metrics | 200 OK | Partial data | Connection refused |
-| IPC | veritas-sdr ready | Exit 0 | Timeout | Exit 1 |
+| IPC | veritas-spark ready | Exit 0 | Timeout | Exit 1 |
 
 ---
 
@@ -53,26 +53,26 @@ kubectl get events --sort-by=.lastTimestamp | tail -20
 
 **Symptoms:**
 - Canary pods running but no requests
-- veritas_sdr_requests_total{deployment="canary"} = 0
+- veritas_spark_requests_total{deployment="canary"} = 0
 - Traffic weight set but not effective
 
 **Diagnostic Steps:**
 
 ```bash
 # 1. Check canary resource status
-veritas-sdr canary inspect
+veritas-spark canary inspect
 
 # 2. Verify traffic weight configuration
 kubectl get veritascanary -o jsonpath="{.items[*].spec.trafficWeight}"
 
 # 3. Check service endpoints
-kubectl get endpoints veritas-sdr-canary
+kubectl get endpoints veritas-spark-canary
 
 # 4. Verify pod labels match service selector
 kubectl get pods -l deployment=canary --show-labels
 
 # 5. Check service mesh configuration (if using Istio)
-kubectl get virtualservice veritas-sdr -o yaml
+kubectl get virtualservice veritas-spark -o yaml
 ```
 
 **Resolution:**
@@ -99,7 +99,7 @@ kubectl get virtualservice veritas-sdr -o yaml
 kubectl exec -it <canary-pod> -- curl -s localhost:9090/metrics | head
 
 # 2. Verify ServiceMonitor exists
-kubectl get servicemonitor veritas-sdr-canary
+kubectl get servicemonitor veritas-spark-canary
 
 # 3. Check Prometheus targets
 kubectl port-forward svc/prometheus 9090:9090
@@ -109,7 +109,7 @@ kubectl port-forward svc/prometheus 9090:9090
 kubectl logs -l app=prometheus -c prometheus | grep canary
 
 # 5. Check for label mismatches
-kubectl get servicemonitor veritas-sdr-canary -o yaml
+kubectl get servicemonitor veritas-spark-canary -o yaml
 ```
 
 **Resolution:**
@@ -133,7 +133,7 @@ kubectl get servicemonitor veritas-sdr-canary -o yaml
 
 ```bash
 # 1. Check analysis history
-veritas-sdr canary inspect --history
+veritas-spark canary inspect --history
 
 # 2. View rollback reason
 kubectl describe veritascanary <name> | grep -A5 "Conditions"
@@ -142,7 +142,7 @@ kubectl describe veritascanary <name> | grep -A5 "Conditions"
 kubectl get veritascanary <name> -o jsonpath="{.status.conditions}"
 
 # 4. Compare canary vs stable metrics
-kubectl exec -it <stable-pod> -- veritas-sdr metrics compare
+kubectl exec -it <stable-pod> -- veritas-spark metrics compare
 
 # 5. View canary logs during failure window
 kubectl logs -l deployment=canary --since=30m
@@ -172,7 +172,7 @@ kubectl logs -l deployment=canary --since=30m
 kubectl get veritascanary <name> -o jsonpath="{.spec.promotion}"
 
 # 2. Verify auto-promotion enabled
-veritas-sdr canary inspect | grep -i "auto.*promotion"
+veritas-spark canary inspect | grep -i "auto.*promotion"
 
 # 3. Check if paused
 kubectl get veritascanary <name> -o jsonpath="{.status.phase}"
@@ -209,7 +209,7 @@ kubectl describe veritascanary <name> | grep -i "waiting"
 
 ```bash
 # 1. Check environment status
-veritas-sdr bluegreen inspect
+veritas-spark bluegreen inspect
 
 # 2. View switch progress
 kubectl get veritasenvironment <name> -o jsonpath="{.status.switchProgress}"
@@ -218,7 +218,7 @@ kubectl get veritasenvironment <name> -o jsonpath="{.status.switchProgress}"
 kubectl get pods -l environment=<target> -o wide
 
 # 4. Verify service selector
-kubectl get svc veritas-sdr -o jsonpath="{.spec.selector}"
+kubectl get svc veritas-spark -o jsonpath="{.spec.selector}"
 
 # 5. Check controller logs
 kubectl logs -l app=veritas-controller | grep -i switch
@@ -250,14 +250,14 @@ kubectl get cm veritas-config-green -o yaml > green-config.yaml
 diff blue-config.yaml green-config.yaml
 
 # 2. Check model versions
-kubectl exec -it <blue-pod> -- veritas-sdr models list
-kubectl exec -it <green-pod> -- veritas-sdr models list
+kubectl exec -it <blue-pod> -- veritas-spark models list
+kubectl exec -it <green-pod> -- veritas-spark models list
 
 # 3. Verify environment labels
 kubectl get pods --show-labels | grep veritas
 
 # 4. Check for config drift
-veritas-sdr bluegreen diff
+veritas-spark bluegreen diff
 ```
 
 **Resolution:**
@@ -293,7 +293,7 @@ kubectl describe nodes | grep -A5 "Allocated resources"
 kubectl logs -l environment=<standby> --tail=50
 
 # 5. Test health directly
-kubectl exec -it <standby-pod> -- veritas-sdr health --verbose
+kubectl exec -it <standby-pod> -- veritas-spark health --verbose
 ```
 
 **Resolution:**
@@ -317,19 +317,19 @@ kubectl exec -it <standby-pod> -- veritas-sdr health --verbose
 
 ```bash
 # 1. Check service endpoints
-kubectl get endpoints veritas-sdr
+kubectl get endpoints veritas-spark
 
 # 2. Verify DNS resolution
-kubectl run -it --rm debug --image=busybox -- nslookup veritas-sdr
+kubectl run -it --rm debug --image=busybox -- nslookup veritas-spark
 
 # 3. Check CoreDNS
 kubectl logs -l k8s-app=kube-dns -n kube-system --tail=20
 
 # 4. View endpoint slices
-kubectl get endpointslices -l kubernetes.io/service-name=veritas-sdr
+kubectl get endpointslices -l kubernetes.io/service-name=veritas-spark
 
 # 5. Test from inside cluster
-kubectl exec -it <any-pod> -- curl veritas-sdr:8080/health
+kubectl exec -it <any-pod> -- curl veritas-spark:8080/health
 ```
 
 **Resolution:**
@@ -371,17 +371,17 @@ kubectl exec -it <any-pod> -- curl veritas-sdr:8080/health
 **Diagnostic Steps:**
 ```bash
 # 1. Check socket exists
-ls -la /var/run/veritas/veritas-sdr.sock  # Unix
+ls -la /var/run/veritas/veritas-spark.sock  # Unix
 Get-ChildItem \.\pipe\ | Where-Object Name -match veritas  # Windows
 
 # 2. Verify runtime is running
-pgrep -a veritas-sdr
+pgrep -a veritas-spark
 
 # 3. Check socket permissions
-stat /var/run/veritas/veritas-sdr.sock
+stat /var/run/veritas/veritas-spark.sock
 
 # 4. Test connection manually
-veritas-sdr health
+veritas-spark health
 ```
 
 **Resolution:**
@@ -404,7 +404,7 @@ sha256sum /models/<model-name>.gguf
 free -h
 
 # 4. View detailed error
-veritas-sdr models load <model-name> --verbose
+veritas-spark models load <model-name> --verbose
 ```
 
 **Resolution:**
@@ -441,7 +441,7 @@ kubectl logs <pod> -c sandbox-init
 **Diagnostic Steps:**
 ```bash
 # 1. Check deployment status
-veritas-sdr deployment status --verbose
+veritas-spark deployment status --verbose
 
 # 2. View recent events
 kubectl get events --sort-by=.lastTimestamp | grep veritas
@@ -463,57 +463,57 @@ kubectl logs -l app=veritas-controller --tail=50
 
 ## Debugging Tools
 
-### veritas-sdr CLI Commands
+### veritas-spark CLI Commands
 
 ```bash
 # Deployment Status
-veritas-sdr deployment status              # Overview of deployment state
-veritas-sdr deployment status --verbose     # Detailed status with metrics
-veritas-sdr deployment status --json        # JSON output for scripting
+veritas-spark deployment status              # Overview of deployment state
+veritas-spark deployment status --verbose     # Detailed status with metrics
+veritas-spark deployment status --json        # JSON output for scripting
 
 # Canary Operations
-veritas-sdr canary inspect                  # Current canary state
-veritas-sdr canary inspect --history        # Analysis history
-veritas-sdr canary inspect --metrics        # Current metric values
+veritas-spark canary inspect                  # Current canary state
+veritas-spark canary inspect --history        # Analysis history
+veritas-spark canary inspect --metrics        # Current metric values
 
 # Blue-Green Operations
-veritas-sdr bluegreen inspect               # Current environment state
-veritas-sdr bluegreen diff                  # Config diff between envs
-veritas-sdr bluegreen switch --dry-run      # Preview switch operation
+veritas-spark bluegreen inspect               # Current environment state
+veritas-spark bluegreen diff                  # Config diff between envs
+veritas-spark bluegreen switch --dry-run      # Preview switch operation
 
 # Rollback Operations
-veritas-sdr rollback --canary               # Rollback canary deployment
-veritas-sdr rollback --bluegreen            # Switch to previous env
-veritas-sdr rollback --force                # Force rollback (override checks)
-veritas-sdr rollback --status               # View rollback progress
+veritas-spark rollback --canary               # Rollback canary deployment
+veritas-spark rollback --bluegreen            # Switch to previous env
+veritas-spark rollback --force                # Force rollback (override checks)
+veritas-spark rollback --status               # View rollback progress
 
 # Health and Diagnostics
-veritas-sdr health                          # Full health check
-veritas-sdr health --verbose                # Detailed health report
-veritas-sdr live                            # Liveness probe
-veritas-sdr ready                           # Readiness probe
+veritas-spark health                          # Full health check
+veritas-spark health --verbose                # Detailed health report
+veritas-spark live                            # Liveness probe
+veritas-spark ready                           # Readiness probe
 
 # Metrics and Telemetry
-veritas-sdr metrics summary                 # Key metrics summary
-veritas-sdr metrics canary                  # Canary-specific metrics
-veritas-sdr telemetry status                # Telemetry system status
+veritas-spark metrics summary                 # Key metrics summary
+veritas-spark metrics canary                  # Canary-specific metrics
+veritas-spark telemetry status                # Telemetry system status
 ```
 
 ### kubectl Debugging Commands
 
 ```bash
 # Pod Investigation
-kubectl get pods -l app=veritas-sdr -o wide
+kubectl get pods -l app=veritas-spark -o wide
 kubectl describe pod <pod-name>
 kubectl logs <pod-name> --tail=100
 kubectl logs <pod-name> --previous          # Previous container logs
 
 # Exec into Pod
 kubectl exec -it <pod-name> -- /bin/sh
-kubectl exec -it <pod-name> -- veritas-sdr health --verbose
+kubectl exec -it <pod-name> -- veritas-spark health --verbose
 
 # Resource Status
-kubectl top pods -l app=veritas-sdr
+kubectl top pods -l app=veritas-spark
 kubectl get events --sort-by=.lastTimestamp
 
 # CRD Status
@@ -526,18 +526,18 @@ kubectl describe veritascanary <name>
 
 ```promql
 # Error rate
-sum(rate(veritas_sdr_requests_total{status="error"}[5m])) /
-sum(rate(veritas_sdr_requests_total[5m]))
+sum(rate(veritas_spark_requests_total{status="error"}[5m])) /
+sum(rate(veritas_spark_requests_total[5m]))
 
 # P99 latency
-histogram_quantile(0.99, sum(rate(veritas_sdr_request_duration_bucket[5m])) by (le))
+histogram_quantile(0.99, sum(rate(veritas_spark_request_duration_bucket[5m])) by (le))
 
 # Canary error rate comparison
-sum(rate(veritas_sdr_requests_total{status="error",deployment="canary"}[5m])) /
-sum(rate(veritas_sdr_requests_total{deployment="canary"}[5m]))
+sum(rate(veritas_spark_requests_total{status="error",deployment="canary"}[5m])) /
+sum(rate(veritas_spark_requests_total{deployment="canary"}[5m]))
 
 # Memory usage
-veritas_sdr_memory_used_bytes / veritas_sdr_memory_limit_bytes
+veritas_spark_memory_used_bytes / veritas_spark_memory_limit_bytes
 
 # Pod readiness
 sum(kube_pod_status_ready{namespace="veritas",condition="true"}) /
@@ -553,11 +553,11 @@ sum(kube_pod_status_ready{namespace="veritas"})
 | Symptom | First Command | Likely Issue |
 |---------|---------------|--------------|
 | All pods down | kubectl get pods | Cluster issue or config error |
-| Canary failing | veritas-sdr canary inspect | Threshold or code bug |
-| Switch stuck | veritas-sdr bluegreen inspect | Health check failing |
-| High latency | veritas-sdr metrics summary | Resource contention |
+| Canary failing | veritas-spark canary inspect | Threshold or code bug |
+| Switch stuck | veritas-spark bluegreen inspect | Health check failing |
+| High latency | veritas-spark metrics summary | Resource contention |
 | No metrics | curl :9090/metrics | Telemetry config |
-| Rollback failed | veritas-sdr rollback --status | Image or state issue |
+| Rollback failed | veritas-spark rollback --status | Image or state issue |
 
 ### Emergency Contacts
 

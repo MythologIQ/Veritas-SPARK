@@ -41,9 +41,9 @@ This document defines incident response procedures for the Hearthlink CORE Runti
 
 **Indicators:**
 ```
-veritas_sdr_runtime_state \!= 1 (all instances)
-veritas_sdr_requests_total{status="error"} rate > 95%
-veritas_sdr_health_ready == 0 (all instances)
+veritas_spark_runtime_state \!= 1 (all instances)
+veritas_spark_requests_total{status="error"} rate > 95%
+veritas_spark_health_ready == 0 (all instances)
 ```
 
 ### SEV2: Partial Outage or Severe Degradation
@@ -66,9 +66,9 @@ veritas_sdr_health_ready == 0 (all instances)
 
 **Indicators:**
 ```
-veritas_sdr_canary_error_rate > 0.05
-veritas_sdr_p99_latency_seconds > baseline * 10
-veritas_sdr_model_load_failures_total increasing rapidly
+veritas_spark_canary_error_rate > 0.05
+veritas_spark_p99_latency_seconds > baseline * 10
+veritas_spark_model_load_failures_total increasing rapidly
 ```
 
 ### SEV3: Minor Degradation
@@ -91,9 +91,9 @@ veritas_sdr_model_load_failures_total increasing rapidly
 
 **Indicators:**
 ```
-veritas_sdr_replica_count < desired (but service operational)
-veritas_sdr_memory_used_ratio > 0.8
-veritas_sdr_error_rate > 0.001 AND < 0.01
+veritas_spark_replica_count < desired (but service operational)
+veritas_spark_memory_used_ratio > 0.8
+veritas_spark_error_rate > 0.001 AND < 0.01
 ```
 
 ### SEV4: Informational
@@ -151,16 +151,16 @@ veritas_sdr_error_rate > 0.001 AND < 0.01
 **Triage Commands:**
 ```bash
 # Check overall deployment status
-veritas-sdr deployment status
+veritas-spark deployment status
 
 # Inspect canary state
-veritas-sdr canary inspect
+veritas-spark canary inspect
 
 # Inspect blue-green state
-veritas-sdr bluegreen inspect
+veritas-spark bluegreen inspect
 
 # Get health report
-veritas-sdr health --verbose
+veritas-spark health --verbose
 ```
 
 **Triage Checklist:**
@@ -178,11 +178,11 @@ veritas-sdr health --verbose
 
 | Action | Command | Use When |
 |--------|---------|----------|
-| Rollback canary | veritas-sdr rollback --canary | Canary causing errors |
-| Rollback blue-green | veritas-sdr rollback --bluegreen | Active env unhealthy |
-| Force rollback | veritas-sdr rollback --force | Automated rollback stuck |
+| Rollback canary | veritas-spark rollback --canary | Canary causing errors |
+| Rollback blue-green | veritas-spark rollback --bluegreen | Active env unhealthy |
+| Force rollback | veritas-spark rollback --force | Automated rollback stuck |
 | Scale up stable | kubectl scale deploy veritas-stable --replicas=N | Need more capacity |
-| Restart pods | kubectl rollout restart deploy/veritas-sdr | Transient state issue |
+| Restart pods | kubectl rollout restart deploy/veritas-spark | Transient state issue |
 
 **Mitigation Priority:**
 1. Stop the bleeding (restore service)
@@ -274,22 +274,22 @@ veritas-sdr health --verbose
 **Diagnostic Steps:**
 ```bash
 # 1. Check canary status
-veritas-sdr canary inspect
+veritas-spark canary inspect
 
 # 2. View canary pod logs
-kubectl logs -l deployment=canary -c veritas-sdr --tail=100
+kubectl logs -l deployment=canary -c veritas-spark --tail=100
 
 # 3. Check analysis results
 kubectl describe veritascanary <name>
 
 # 4. View metrics
-kubectl exec -it <stable-pod> -- veritas-sdr metrics canary
+kubectl exec -it <stable-pod> -- veritas-spark metrics canary
 ```
 
 **Resolution Options:**
 | Scenario | Action |
 |----------|--------|
-| Canary crashing | veritas-sdr rollback --canary |
+| Canary crashing | veritas-spark rollback --canary |
 | Metrics not collecting | Check Prometheus scraping config |
 | Analysis failing | Adjust thresholds or extend duration |
 | Traffic not splitting | Verify service mesh configuration |
@@ -304,7 +304,7 @@ kubectl exec -it <stable-pod> -- veritas-sdr metrics canary
 **Diagnostic Steps:**
 ```bash
 # 1. Check environment status
-veritas-sdr bluegreen inspect
+veritas-spark bluegreen inspect
 
 # 2. View both environment pods
 kubectl get pods -l environment=blue
@@ -314,14 +314,14 @@ kubectl get pods -l environment=green
 kubectl describe veritasenvironment <name>
 
 # 4. Verify health of target environment
-kubectl exec -it <target-pod> -- veritas-sdr health --verbose
+kubectl exec -it <target-pod> -- veritas-spark health --verbose
 ```
 
 **Resolution Options:**
 | Scenario | Action |
 |----------|--------|
 | Target env unhealthy | Fix target or rollback |
-| Switch timeout | veritas-sdr bluegreen switch --force |
+| Switch timeout | veritas-spark bluegreen switch --force |
 | Service routing stuck | Manually update service selector |
 | State sync failed | Clear state and retry |
 
@@ -335,13 +335,13 @@ kubectl exec -it <target-pod> -- veritas-sdr health --verbose
 **Diagnostic Steps:**
 ```bash
 # 1. Check rollback status
-veritas-sdr rollback --status
+veritas-spark rollback --status
 
 # 2. Verify previous image availability
-kubectl describe deployment veritas-sdr | grep Image
+kubectl describe deployment veritas-spark | grep Image
 
 # 3. Check rollout history
-kubectl rollout history deployment/veritas-sdr
+kubectl rollout history deployment/veritas-spark
 ```
 
 **Resolution Options:**
@@ -364,14 +364,14 @@ kubectl rollout history deployment/veritas-sdr
 kubectl exec -it <pod> -- curl localhost:9090/metrics
 
 # 2. Verify ServiceMonitor
-kubectl get servicemonitor veritas-sdr -o yaml
+kubectl get servicemonitor veritas-spark -o yaml
 
 # 3. Check Prometheus targets
 kubectl port-forward svc/prometheus 9090:9090
 # Then visit http://localhost:9090/targets
 
 # 4. View telemetry status
-veritas-sdr telemetry status
+veritas-spark telemetry status
 ```
 
 **Resolution Options:**
@@ -503,23 +503,23 @@ Post-Mortem: Scheduled for [Date/Time] - [Link to RCA doc]
 
 ```bash
 # Health checks
-veritas-sdr health
-veritas-sdr live
-veritas-sdr ready
+veritas-spark health
+veritas-spark live
+veritas-spark ready
 
 # Deployment status
-veritas-sdr deployment status
-veritas-sdr canary inspect
-veritas-sdr bluegreen inspect
+veritas-spark deployment status
+veritas-spark canary inspect
+veritas-spark bluegreen inspect
 
 # Rollback operations
-veritas-sdr rollback --canary
-veritas-sdr rollback --bluegreen
-veritas-sdr rollback --force
+veritas-spark rollback --canary
+veritas-spark rollback --bluegreen
+veritas-spark rollback --force
 
 # Diagnostics
-veritas-sdr telemetry status
-veritas-sdr metrics summary
+veritas-spark telemetry status
+veritas-spark metrics summary
 ```
 
 ### Key Metrics

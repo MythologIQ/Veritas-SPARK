@@ -1,4 +1,4 @@
-# Veritas SDR Multi-GPU Values
+# Veritas SPARK Multi-GPU Values
 # Configuration for multi-GPU deployment with load balancing
 # Suitable for: High-throughput production inference, large models
 
@@ -8,7 +8,7 @@ replicaCount: 3
 
 # Container image configuration
 image:
-  repository: veritas-sdr/core
+  repository: veritas-spark/core
   pullPolicy: IfNotPresent
   tag: "0.6.5"
 
@@ -79,7 +79,7 @@ ingress:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: veritas-sdr-tls
+    - secretName: veritas-spark-tls
       hosts:
         - inference.example.com
 
@@ -121,7 +121,7 @@ affinity:
               - key: app.kubernetes.io/name
                 operator: In
                 values:
-                  - veritas-sdr
+                  - veritas-spark
           topologyKey: kubernetes.io/hostname
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
@@ -282,7 +282,7 @@ networkPolicy:
         - namespaceSelector: {}
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: veritas-sdr
+              app.kubernetes.io/name: veritas-spark
       ports:
         - protocol: TCP
           port: 8080
@@ -295,8 +295,8 @@ podAnnotations:
 # Pod labels
 podLabels:
   app.kubernetes.io/component: inference
-  app.kubernetes.io/part-of: veritas-sdr
-  veritas-sdr.io/gpu-count: "2"
+  app.kubernetes.io/part-of: veritas-spark
+  veritas-spark.io/gpu-count: "2"
 
 # Additional containers
 extraContainers: []

@@ -1,6 +1,6 @@
-//! Veritas SDR - Secure Deterministic Runtime
+//! Veritas SPARK - Secure Performance-Accelerated Runtime Kernel
 //!
-//! **Veritas** (Truth, Integrity, Correctness) + **SDR** (Secure Deterministic Runtime)
+//! **Veritas** (Truth, Integrity, Correctness) + **SPARK** (Secure Performance-Accelerated Runtime Kernel)
 //!
 //! A sandboxed, offline inference engine that performs model execution only.
 //! No authority over data, tools, or system actions.

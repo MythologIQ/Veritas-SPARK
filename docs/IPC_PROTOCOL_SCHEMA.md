@@ -1,14 +1,14 @@
-# Veritas SDR IPC Protocol Schema v0.6.7
+# Veritas SPARK IPC Protocol Schema v0.7.0
 
 **Contract Freeze Date**: 2026-02-19
 **Protocol Version**: V1 (JSON encoding)
-**Status**: FROZEN for Hearthlink integration
+**Status**: Streaming enabled
 
 ---
 
 ## Overview
 
-Veritas SDR uses a named pipe IPC protocol for all communication. This document specifies the wire format and message schemas that integrators must implement.
+Veritas SPARK (Secure Performance-Accelerated Runtime Kernel) uses a named pipe IPC protocol for all communication. This document specifies the wire format and message schemas that integrators must implement.
 
 ## Transport Layer
 
@@ -205,20 +205,37 @@ All sessions begin with a handshake exchange:
 }
 ```
 
-### Streaming (Not Implemented)
+### Streaming Inference
+
+To enable streaming, set `stream: true` in the inference request parameters:
 
 ```json
-// Stream chunk (error response in v0.6.7)
+// Request with streaming
 {
-  "type": "stream_chunk",
+  "type": "inference_request",
   "request_id": 1234,
-  "token": 0,
-  "is_final": true,
-  "error": "Streaming not implemented. Use stream: false for inference."
+  "model_id": "phi-3-mini",
+  "prompt": "Hello",
+  "parameters": {
+    "max_tokens": 100,
+    "stream": true
+  }
 }
+
+// Server sends multiple stream chunks
+{ "type": "stream_chunk", "request_id": 1234, "token": 15496, "is_final": false }
+{ "type": "stream_chunk", "request_id": 1234, "token": 2983, "is_final": false }
+{ "type": "stream_chunk", "request_id": 1234, "token": 198, "is_final": true }
 ```
 
-**Status**: Streaming is NOT implemented in v0.6.7. Requests with `stream: true` will receive an error response. Use non-streaming inference (`stream: false`) until v0.7.0+.
+| Field | Type | Description |
+|-------|------|-------------|
+| request_id | u64 | Matches original request |
+| token | u32 | Generated token ID |
+| is_final | bool | True on last chunk |
+| error | string? | Error message if failed |
+
+**Cancellation**: Send `CancelRequest` during streaming to abort generation.
 
 ### Error Response
 
@@ -295,13 +312,27 @@ All sessions begin with a handshake exchange:
 
 ---
 
-## Deferred Features (v0.7.0+)
+## v0.7.0 Changes
 
-The following features are explicitly deferred to v0.7.0:
+### New Features
+
+| Feature | Description |
+|---------|-------------|
+| **Streaming inference** | Token-by-token streaming via `stream: true` parameter |
+| **Mid-stream cancellation** | Cancel streaming requests with `CancelRequest` |
+
+### Breaking Changes from v0.6.7
+
+None. v0.7.0 is backward compatible with v0.6.7 clients.
+
+---
+
+## Deferred Features (v0.8.0+)
+
+The following features are deferred to future versions:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| **Streaming inference** | Returns error | Use `stream: false` until v0.7.0 |
 | **KV cache metrics** | Returns 0 | Requires IPC protocol extension |
 | **Memory limit/utilization** | Returns 0 | Requires runtime config exposure |
 | **CPU utilization** | Returns 0 | Requires procfs/sysinfo integration |
@@ -310,7 +341,6 @@ The following features are explicitly deferred to v0.7.0:
 | **Batch metrics** | Returns 0 | Requires scheduler instrumentation |
 
 These fields are present in `status --json` output but return placeholder values.
-They are NOT bugs - they are explicitly documented deferrals.
 
 ---
 
@@ -326,4 +356,4 @@ This schema is FROZEN for Hearthlink integration. Any breaking changes require:
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors
+Copyright 2024-2026 Veritas SPARK Contributors

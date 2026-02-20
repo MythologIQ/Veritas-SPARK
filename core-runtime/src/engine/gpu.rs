@@ -1,10 +1,10 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // Licensed under the Apache License, Version 2.0
 
 //! GPU Backend Support
 //!
 //! Provides GPU acceleration for inference using CUDA (NVIDIA) or Metal (Apple Silicon).
-//! This module implements the GPU abstraction layer for Veritas SDR.
+//! This module implements the GPU abstraction layer for Veritas SPARK.
 
 use std::fmt;
 use std::sync::Arc;

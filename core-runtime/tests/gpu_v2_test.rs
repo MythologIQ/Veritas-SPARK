@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // Licensed under the Apache License, Version 2.0
 
 //! GPU Support Tests v2 - Tests for CUDA and Metal backends

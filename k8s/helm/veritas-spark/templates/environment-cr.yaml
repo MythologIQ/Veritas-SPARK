@@ -4,9 +4,9 @@
 apiVersion: veritas.hearthlink.ai/v1alpha1
 kind: VeritasEnvironment
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}
+  name: {{ include "veritas-spark.fullname" . }}
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
 spec:
   blue:
     version: {{ .Values.bluegreen.blue.version | quote }}

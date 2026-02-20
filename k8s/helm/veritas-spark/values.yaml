@@ -1,9 +1,9 @@
-# Default values for veritas-sdr
+# Default values for veritas-spark
 
 replicaCount: 1
 
 image:
-  repository: veritas-sdr
+  repository: veritas-spark
   tag: "0.5.0"
   pullPolicy: IfNotPresent
 
@@ -32,7 +32,7 @@ models:
 
 # Runtime configuration
 config:
-  socketPath: "/var/run/veritas/veritas-sdr.sock"
+  socketPath: "/var/run/veritas/veritas-spark.sock"
   maxContextLength: 4096
   sessionTimeout: 3600
   shutdownTimeout: 30

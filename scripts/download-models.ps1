@@ -1,4 +1,5 @@
-# Veritas SDR Model Download Script
+# Veritas SPARK Model Download Script
+# SPARK = Secure Performance-Accelerated Runtime Kernel
 # Downloads recommended GGUF models for testing and production
 
 param(
@@ -14,8 +15,8 @@ if (-not (Test-Path $ModelsDir)) {
     New-Item -ItemType Directory -Path $ModelsDir -Force | Out-Null
 }
 
-Write-Host "Veritas SDR Model Downloader" -ForegroundColor Cyan
-Write-Host "=============================" -ForegroundColor Cyan
+Write-Host "Veritas SPARK Model Downloader" -ForegroundColor Cyan
+Write-Host "===============================" -ForegroundColor Cyan
 
 # Model definitions
 $Models = @{
@@ -96,4 +97,4 @@ foreach ($tier in $toDownload) {
 Write-Host "Done! Models ready in: $ModelsDir" -ForegroundColor Green
 Write-Host ""
 Write-Host "Register models with:"
-Write-Host "  veritas-sdr-cli model register --name <name> --path models/<file>.gguf --format gguf"
+Write-Host "  veritas-spark-cli model register --name <name> --path models/<file>.gguf --format gguf"

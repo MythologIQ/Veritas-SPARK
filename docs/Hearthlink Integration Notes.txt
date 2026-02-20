@@ -1,0 +1,97 @@
+What I Integrated In Hearthlink (Veritas Runtime)
+
+Runtime lifecycle + config state in Tauri backend
+Added full Veritas runtime state manager in veritas_runtime.rs.
+Supports configure/start/stop/status with persisted in-memory state.
+Config fields now include:
+binary_path
+models_dir
+socket_path
+auth_token
+Registered state and commands in main.rs and module export in lib.rs.
+Model registration + persona mapping
+Added backend commands to:
+register/list/remove models
+assign model per persona
+query active persona model
+Files:
+veritas_runtime.rs
+command wiring in main.rs
+Synapse download-to-Veritas flow
+Added command to download model artifacts and register them in Veritas runtime state.
+Includes checksum verification and audit logging.
+Files:
+marketplace.rs
+command registration in main.rs
+bridge updates in SynapseBridge.ts, MarketplaceBridge.ts, agents.ts
+Frontend bridge support
+Added Veritas bridge with typed methods for all runtime operations:
+configure/start/stop/status
+register/list/switch/remove/getPersonaModel
+infer
+diagnostics
+Files:
+VeritasBridge.ts
+export in index.ts
+Inference path integration in app logic
+intelligence_generate now tries Veritas first when a persona has a Veritas model mapping, then falls back to Ollama path.
+Also includes reserve model fallback logic for Ollama path.
+File:
+intelligence.rs
+reserve routing helper in model_router.rs
+IPC protocol compatibility updates for Veritas v0.6.5
+Updated Hearthlink Veritas IPC payload handling to v0.6.5 schema:
+request uses prompt
+response uses output and tokens_generated
+Kept backward compatibility for older output_tokens.
+File:
+veritas_runtime.rs
+Diagnostics integration
+Added Tauri command that executes veritas-spark status --json and returns parsed JSON for UI/automation.
+File:
+veritas_runtime.rs
+Safety guards to avoid fake/stub output surfacing
+Detects and rejects mock output patterns so app falls back safely.
+Added readable-output checks and explicit failure messages.
+File:
+veritas_runtime.rs
+Validation I ran
+cargo check on src-tauri repeatedly passed after each integration slice.
+Veritas runtime tests run in external/Veritas-SPARK/core-runtime:
+ipc_server_test passed
+integration_end_to_end_test passed
+Live smoke:
+veritas-spark serve + veritas-spark status --json returned healthy.
+What Veritas Builders Still Need To Complete (Precisely)
+
+Production-grade model load lifecycle inside runtime
+Runtime must support loading/unloading models through stable control path (CLI or IPC), not just docs/examples.
+Today, Hearthlink can register model metadata locally; runtime-side loaded model list must be authoritative and manageable.
+Guaranteed real generation path for production builds
+No mock or synthetic generation output in production profile.
+Any mock/dev generation path must be gated behind explicit non-production feature flag and impossible in release artifacts.
+Tokenizer non-stub requirement in production
+Stub tokenizer behavior (empty encode/decode) must be disabled for production mode.
+Runtime should fail fast at startup or model-load time if tokenizer backend is unavailable.
+Streaming completion
+ffi/streaming placeholder path must be completed or clearly disabled.
+Streaming inference should emit real chunks and final state consistently.
+Model identity correctness
+Inference must always resolve actual loaded model by model_id; no fallback handles or implicit defaults.
+Errors must be explicit when model isn’t loaded.
+E2E proof with loaded model
+Required evidence from builders:
+Load real GGUF/ONNX model
+Run inference with non-empty meaningful output
+Show metrics increment (requests, tokens_generated, latency)
+Repeatability across restarts
+Operational metrics completion
+status --json has TODO fields still defaulting to zeros/null in several sections.
+For production observability, fill key metrics fields or mark unsupported fields explicitly.
+Contract freeze for Hearthlink integration
+Freeze and version the runtime IPC schema for inference/diagnostics/model controls.
+If schema changes again, publish migration notes with exact field diffs and compatibility matrix.
+Current integration boundary
+
+Hearthlink-side integration is functionally wired and protocol-updated.
+Remaining blockers are runtime capability maturity and runtime model lifecycle guarantees from Veritas builders.

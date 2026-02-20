@@ -1,10 +1,10 @@
-# Veritas SDR - Agent Review Council
+# Veritas SPARK - Agent Review Council
 
 ## Purpose
 
-**Veritas SDR** (Secure Deterministic Runtime) is a multi-agent review council for rigorous analysis of the Hearthlink CORE Runtime, combining technical depth with unconventional challenge to discover unrealized design potential.
+**Veritas SPARK** (Secure Performance-Accelerated Runtime Kernel) is a multi-agent review council for rigorous analysis of the Hearthlink CORE Runtime, combining technical depth with unconventional challenge to discover unrealized design potential.
 
-The council ensures **Veritas** (truth, integrity, correctness) in a **Secure**, **Deterministic** **Runtime** through adversarial collaboration.
+The council ensures **Veritas** (truth, integrity, correctness) in a **S**ecure, **P**erformance-**A**ccelerated **R**untime **K**ernel through adversarial collaboration.
 
 ---
 
@@ -13,7 +13,7 @@ The council ensures **Veritas** (truth, integrity, correctness) in a **Secure**,
 ### Agent Definitions
 
 ```yaml
-team_name: "Veritas SDR Council"
+team_name: "Veritas SPARK Council"
 domain: "Sandboxed Inference Runtime"
 mode: "Adversarial Collaboration"
 

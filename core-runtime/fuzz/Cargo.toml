@@ -1,5 +1,5 @@
 [package]
-name = "veritas-sdr-fuzz"
+name = "veritas-spark-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2021"

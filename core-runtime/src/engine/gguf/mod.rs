@@ -51,6 +51,9 @@ pub trait GgufModel: Send + Sync {
     ) -> Result<InferenceOutput, InferenceError>;
 
     async fn unload(&mut self) -> Result<(), InferenceError>;
+
+    /// Downcast support for streaming access to concrete type.
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 /// Load a GGUF model from a file path using llama-cpp-2.

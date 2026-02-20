@@ -1,7 +1,7 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Python exception types for Veritas SDR errors
+//! Python exception types for Veritas SPARK errors
 
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;

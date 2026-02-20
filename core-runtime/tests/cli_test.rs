@@ -18,10 +18,10 @@ use veritas_sdr::ipc::protocol::HealthCheckType;
 #[test]
 fn test_default_socket_path_platform_specific() {
     #[cfg(unix)]
-    assert_eq!(DEFAULT_SOCKET_PATH, "/var/run/veritas/veritas-sdr.sock");
+    assert_eq!(DEFAULT_SOCKET_PATH, "/var/run/veritas/veritas-spark.sock");
 
     #[cfg(windows)]
-    assert_eq!(DEFAULT_SOCKET_PATH, r"\\.\pipe\veritas-sdr");
+    assert_eq!(DEFAULT_SOCKET_PATH, r"\\.\pipe\veritas-spark");
 }
 
 #[test]

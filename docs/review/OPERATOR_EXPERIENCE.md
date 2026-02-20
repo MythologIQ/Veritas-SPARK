@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document assesses the operator experience for Veritas SDR v0.6.0, identifying gaps between current state and production-ready expectations. The assessment follows the operator journey from initial evaluation through production operations.
+This document assesses the operator experience for Veritas SPARK v0.6.0, identifying gaps between current state and production-ready expectations. The assessment follows the operator journey from initial evaluation through production operations.
 
 ### Current State
 
@@ -28,7 +28,7 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
 
 ### Phase 1: Discovery
 
-**Goal:** Operator discovers Veritas SDR and understands its value proposition.
+**Goal:** Operator discovers Veritas SPARK and understands its value proposition.
 
 | Step                        | Current State                       | Target State                     | Gap   |
 | --------------------------- | ----------------------------------- | -------------------------------- | ----- |
@@ -69,7 +69,7 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
 **Recommendations:**
 
 - Create QUICKSTART.md with 10-minute deployment
-- Add `veritas-sdr verify` command
+- Add `veritas-spark verify` command
 - Provide example inference with expected output
 
 ### Phase 3: Configuration
@@ -80,7 +80,7 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
 | -------------------------- | ---------------------- | --------------------------------- | -------- |
 | 3.1 Understand options     | values.yaml documented | Categorized options with examples | Major    |
 | 3.2 Configure for scenario | No scenario examples   | 5+ scenario examples              | Critical |
-| 3.3 Validate configuration | Deploy and pray        | `veritas-sdr config validate`     | Major    |
+| 3.3 Validate configuration | Deploy and pray        | `veritas-spark config validate`     | Major    |
 | 3.4 Apply configuration    | Helm upgrade           | Same                              | None     |
 
 **Pain Points:**
@@ -96,7 +96,7 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
   - values-single-gpu.yaml
   - values-multi-gpu.yaml
   - values-production.yaml
-- Implement `veritas-sdr config validate`
+- Implement `veritas-spark config validate`
 
 ### Phase 4: Production Deployment
 
@@ -127,7 +127,7 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
 
 | Step              | Current State        | Target State         | Gap   |
 | ----------------- | -------------------- | -------------------- | ----- |
-| 5.1 Check health  | kubectl commands     | `veritas-sdr status` | Major |
+| 5.1 Check health  | kubectl commands     | `veritas-spark status` | Major |
 | 5.2 View metrics  | Build own dashboards | Pre-built dashboards | Major |
 | 5.3 Scale system  | Manual scaling       | HPA + documentation  | Minor |
 | 5.4 Update models | Manual process       | Documented procedure | Minor |
@@ -140,7 +140,7 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
 
 **Recommendations:**
 
-- Implement `veritas-sdr status` command
+- Implement `veritas-spark status` command
 - Ship Grafana dashboards
 - Document HPA configuration
 
@@ -174,24 +174,24 @@ This document assesses the operator experience for Veritas SDR v0.6.0, identifyi
 **Current State:**
 
 ```
-$ veritas-sdr
+$ veritas-spark
 Available commands: deploy, rollback, config, models
 
-$ veritas-sdr deploy
+$ veritas-spark deploy
 error: missing required argument 'environment'
 
-$ veritas-sdr deploy --help
+$ veritas-spark deploy --help
 error: unrecognized flag '--help'
 ```
 
 **Target State:**
 
 ```
-$ veritas-sdr
-Veritas SDR - Secure LLM Inference Runtime v0.6.0
+$ veritas-spark
+Veritas SPARK - Secure LLM Inference Runtime v0.6.0
 
 COMMANDS:
-  deploy    Deploy Veritas SDR to Kubernetes
+  deploy    Deploy Veritas SPARK to Kubernetes
   rollback  Rollback to previous deployment
   config    Manage configuration
   models    Manage models
@@ -202,11 +202,11 @@ FLAGS:
   --help    Show help for command
   --version Show version
 
-$ veritas-sdr deploy --help
-Deploy Veritas SDR to Kubernetes
+$ veritas-spark deploy --help
+Deploy Veritas SPARK to Kubernetes
 
 USAGE:
-  veritas-sdr deploy [ENVIRONMENT] [FLAGS]
+  veritas-spark deploy [ENVIRONMENT] [FLAGS]
 
 ARGUMENTS:
   ENVIRONMENT    Target environment (dev|staging|prod)
@@ -217,8 +217,8 @@ FLAGS:
   --wait        Wait for deployment to complete
 
 EXAMPLES:
-  veritas-sdr deploy prod --strategy=canary
-  veritas-sdr deploy staging --dry-run
+  veritas-spark deploy prod --strategy=canary
+  veritas-spark deploy staging --dry-run
 ```
 
 **Gap:**
@@ -241,7 +241,7 @@ EXAMPLES:
 **Target State:**
 
 ```
-k8s/helm/veritas-sdr/
+k8s/helm/veritas-spark/
   values.yaml              # Full reference
   values-dev.yaml          # Minimal CPU-only
   values-single-gpu.yaml   # Single GPU
@@ -267,7 +267,7 @@ k8s/helm/veritas-sdr/
 **Target State:**
 
 ```
-k8s/helm/veritas-sdr/templates/
+k8s/helm/veritas-spark/templates/
   grafana-dashboard-overview.yaml
   grafana-dashboard-inference.yaml
   grafana-dashboard-deployment.yaml
@@ -288,16 +288,16 @@ k8s/helm/veritas-sdr/templates/
 
 ```bash
 # Operator must run multiple commands
-kubectl get pods -l app=veritas-sdr
+kubectl get pods -l app=veritas-spark
 kubectl get canary
-kubectl logs -l app=veritas-sdr --tail=100
+kubectl logs -l app=veritas-spark --tail=100
 kubectl top pods
 ```
 
 **Target State:**
 
 ```
-$ veritas-sdr status
+$ veritas-spark status
 VERITAS SDR STATUS
 ==================
 
@@ -352,16 +352,16 @@ EVENTS (last 24h):
 
 ## Deploy (3 min)
 
-helm repo add veritas https://charts.veritas-sdr.io
-helm install veritas-sdr veritas/veritas-sdr -f values-dev.yaml
+helm repo add veritas https://charts.veritas-spark.io
+helm install veritas-spark veritas/veritas-spark -f values-dev.yaml
 
 ## Verify (2 min)
 
-veritas-sdr verify
+veritas-spark verify
 
 ## First Inference (3 min)
 
-curl -X POST http://veritas-sdr:8080/v1/completions \
+curl -X POST http://veritas-spark:8080/v1/completions \
  -H "Content-Type: application/json" \
  -d '{"prompt": "Hello, world!", "max_tokens": 50}'
 ```
@@ -382,10 +382,10 @@ curl -X POST http://veritas-sdr:8080/v1/completions \
 
 | Error             | Current Message                    | Improved Message                                                                                                                      |
 | ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| Missing argument  | `error: missing required argument` | `error: missing required argument 'environment'. Usage: veritas-sdr deploy <environment>`                                             |
+| Missing argument  | `error: missing required argument` | `error: missing required argument 'environment'. Usage: veritas-spark deploy <environment>`                                             |
 | Invalid value     | `error: invalid value`             | `error: invalid value 'xyz' for --strategy. Valid options: canary, bluegreen, rolling`                                                |
 | Connection failed | `error: connection failed`         | `error: cannot connect to Kubernetes cluster. Verify kubeconfig is set correctly: kubectl cluster-info`                               |
-| Model not found   | `error: model not found`           | `error: model 'llama-3-70b' not found. Available models: llama-2-7b, codellama-34b. Use 'veritas-sdr models list' to see all models.` |
+| Model not found   | `error: model not found`           | `error: model 'llama-3-70b' not found. Available models: llama-2-7b, codellama-34b. Use 'veritas-spark models list' to see all models.` |
 | GPU unavailable   | `error: gpu error`                 | `error: no GPU available. Verify GPU resources: kubectl describe nodes                                                                | grep nvidia.com/gpu` |
 
 **Gap:**
@@ -481,7 +481,7 @@ curl -X POST http://veritas-sdr:8080/v1/completions \
 
 ## Conclusion
 
-The operator experience for Veritas SDR v0.6.0 requires significant improvement before production readiness. The 2.0/5 score reflects gaps in:
+The operator experience for Veritas SPARK v0.6.0 requires significant improvement before production readiness. The 2.0/5 score reflects gaps in:
 
 1. **Quick evaluation path** - No 10-minute deployment guide
 2. **CLI usability** - No --help, cryptic errors

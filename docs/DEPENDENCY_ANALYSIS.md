@@ -1,14 +1,14 @@
-# Dependency Analysis: Veritas SDR
+# Dependency Analysis: Veritas SPARK
 
-**Document Purpose:** Analyze dependencies, build options, and licensing implications  
-**Date:** 2026-02-16  
+**Document Purpose:** Analyze dependencies, build options, and licensing implications
+**Date:** 2026-02-16
 **Status:** Complete
 
 ---
 
 ## Executive Summary
 
-Veritas SDR has **two types of dependencies**:
+Veritas SPARK (Secure Performance-Accelerated Runtime Kernel) has **two types of dependencies**:
 
 1. **Rust Crates** - Compiled into the binary (static linking)
 2. **Native Libraries** - Optional backends (ONNX, GGUF)
@@ -156,9 +156,9 @@ cargo build --release
 | LGPL               | ⚠️ Conditional             | Dynamic linking recommended    |
 | GPL                | ❌ No                      | Incompatible with Apache 2.0   |
 
-### 3.2 Veritas SDR Dependency Licenses - ALL PERMISSIVE
+### 3.2 Veritas SPARK Dependency Licenses - ALL PERMISSIVE
 
-**IMPORTANT: Veritas SDR has NO LGPL or GPL dependencies.**
+**IMPORTANT: Veritas SPARK has NO LGPL or GPL dependencies.**
 
 All dependencies in this project use permissive licenses:
 
@@ -168,13 +168,13 @@ All dependencies in this project use permissive licenses:
 | **ONNX Backend (Candle)**    | MIT, Apache-2.0 | Fully compatible |
 | **GGUF Backend (llama.cpp)** | MIT             | Fully compatible |
 
-**Result:** All dependencies are Apache 2.0 or MIT, fully compatible with Veritas SDR's Apache 2.0 license.
+**Result:** All dependencies are Apache 2.0 or MIT, fully compatible with Veritas SPARK's Apache 2.0 license.
 
 ### 3.3 Why LGPL/GPL Are Listed (But Not Used)
 
 The license compatibility matrix includes LGPL and GPL for **reference only** - these show what *would* happen if such dependencies were added:
 
-| License | Why It's Listed | Current Status in Veritas SDR |
+| License | Why It's Listed | Current Status in Veritas SPARK |
 | ------- | --------------- | ----------------------------- |
 | **LGPL** | Shows copyleft implications | ❌ **NOT USED** - No LGPL dependencies |
 | **GPL** | Shows incompatibility warning | ❌ **NOT USED** - No GPL dependencies |
@@ -184,7 +184,7 @@ The license compatibility matrix includes LGPL and GPL for **reference only** - 
 - **LGPL (Lesser GPL)**: If used, would require dynamic linking or provide object files for relinking. This adds deployment complexity.
 - **GPL**: If used, would require the entire project to be GPL-licensed, which conflicts with Apache 2.0.
 
-**Veritas SDR's Policy:** Only MIT and Apache-2.0 licensed dependencies are permitted. This ensures:
+**Veritas SPARK's Policy:** Only MIT and Apache-2.0 licensed dependencies are permitted. This ensures:
 1. No copyleft obligations
 2. No license compatibility issues
 3. Maximum flexibility for users and contributors
@@ -210,8 +210,8 @@ The license compatibility matrix includes LGPL and GPL for **reference only** - 
 **Recommended:** Create a `NOTICE` file with all dependency attributions:
 
 ```
-Veritas SDR
-Copyright 2024-2026 Veritas SDR Contributors
+Veritas SPARK
+Copyright 2024-2026 Veritas SPARK Contributors
 
 This product includes software developed by third parties:
 
@@ -231,9 +231,9 @@ serde - Copyright (c) Serde Contributors
 ### 4.1 Single Binary Distribution (Recommended)
 
 ```
-veritas-sdr.exe          # Windows
-veritas-sdr              # Linux
-veritas-sdr              # macOS
+veritas-spark.exe          # Windows
+veritas-spark              # Linux
+veritas-spark              # macOS
 ```
 
 **Requirements:**
@@ -251,7 +251,7 @@ veritas-sdr              # macOS
 ### 4.2 Binary + Native Libraries
 
 ```
-veritas-sdr.exe
+veritas-spark.exe
 llama.dll                # GGUF backend
 ```
 
@@ -268,8 +268,8 @@ llama.dll                # GGUF backend
 
 ```dockerfile
 FROM scratch
-COPY veritas-sdr /veritas-sdr
-ENTRYPOINT ["/veritas-sdr"]
+COPY veritas-spark /veritas-spark
+ENTRYPOINT ["/veritas-spark"]
 ```
 
 **Result:** Minimal container (~20-50 MB) with single binary.
@@ -306,7 +306,7 @@ The following dependencies are **explicitly forbidden** per [`Cargo.toml`](core-
 
 ### 6.1 Single Binary Distribution - RECOMMENDED
 
-**Yes, single binary distribution is recommended for Veritas SDR.**
+**Yes, single binary distribution is recommended for Veritas SPARK.**
 
 | Factor         | Assessment                                                  |
 | -------------- | ----------------------------------------------------------- |
@@ -352,8 +352,8 @@ cargo build --release --features full
 ### 6.3 Distribution Package
 
 ```
-veritas-sdr/
-  veritas-sdr.exe           # Single binary
+veritas-spark/
+  veritas-spark.exe           # Single binary
   LICENSE                   # Apache 2.0
   NOTICE                    # Dependency attributions
   README.md                 # Quick start
@@ -371,8 +371,8 @@ veritas-sdr/
 ### 6.2 For Maximum Compatibility
 
 1. **Build separate binaries:**
-   - `veritas-sdr-onnx.exe` - Pure Rust, ONNX only
-   - `veritas-sdr-full.exe` - With GGUF backend
+   - `veritas-spark-onnx.exe` - Pure Rust, ONNX only
+   - `veritas-spark-full.exe` - With GGUF backend
 2. **Document build process** for custom builds
 3. **Provide Docker images** for containerized deployment
 
@@ -393,7 +393,7 @@ veritas-sdr/
 
 ### Licensing Implications
 
-**None.** All dependencies use MIT or Apache 2.0 licenses, which are fully compatible with Veritas SDR's Apache 2.0 license and allow static linking.
+**None.** All dependencies use MIT or Apache 2.0 licenses, which are fully compatible with Veritas SPARK's Apache 2.0 license and allow static linking.
 
 ### Recommended Distribution
 
@@ -459,5 +459,5 @@ cargo build --release
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors  
+Copyright 2024-2026 Veritas SPARK Contributors  
 Licensed under the Apache License, Version 2.0

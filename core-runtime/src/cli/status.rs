@@ -1,7 +1,7 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Status command implementation for Veritas SDR.
+//! Status command implementation for Veritas SPARK.
 //!
 //! Provides detailed system status including:
 //! - Health state
@@ -356,7 +356,7 @@ fn print_status_human(status: &SystemStatus) {
 
     println!("╔════════════════════════════════════════════════════════════════╗");
     println!(
-        "║  Veritas SDR Status                                    v{}   ║",
+        "║  Veritas SPARK Status                                    v{}   ║",
         status.version.version
     );
     println!("╠════════════════════════════════════════════════════════════════╣");

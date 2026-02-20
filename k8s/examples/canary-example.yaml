@@ -12,10 +12,10 @@
 apiVersion: veritas.hearthlink.ai/v1alpha1
 kind: VeritasCanary
 metadata:
-  name: veritas-sdr-canary
+  name: veritas-spark-canary
   namespace: veritas-system
   labels:
-    app.kubernetes.io/name: veritas-sdr
+    app.kubernetes.io/name: veritas-spark
     app.kubernetes.io/component: canary
 spec:
   # Current stable version
@@ -89,7 +89,7 @@ spec:
 apiVersion: veritas.hearthlink.ai/v1alpha1
 kind: VeritasCanary
 metadata:
-  name: veritas-sdr-canary-manual
+  name: veritas-spark-canary-manual
   namespace: veritas-system
 spec:
   stableVersion: "0.5.0"

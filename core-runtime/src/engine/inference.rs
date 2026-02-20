@@ -203,6 +203,35 @@ impl InferenceEngine {
         }
         None
     }
+
+    /// Run streaming inference, sending tokens to the provided sender.
+    ///
+    /// This method looks up the model, downcasts to GgufGenerator, and calls
+    /// generate_stream(). Designed for use with spawn_blocking.
+    #[cfg(feature = "gguf")]
+    pub fn run_stream_sync(
+        &self,
+        model_id: &str,
+        prompt: &str,
+        config: &InferenceConfig,
+        sender: crate::engine::TokenStreamSender,
+    ) -> Result<(), InferenceError> {
+        use crate::engine::gguf::GgufGenerator;
+
+        // Get runtime handle for async model lookup
+        let rt = tokio::runtime::Handle::current();
+        let models = rt.block_on(self.models.read());
+        let model = models.get(model_id).ok_or_else(|| {
+            InferenceError::ModelNotLoaded(model_id.to_string())
+        })?;
+
+        // Downcast to GgufGenerator for streaming access
+        let generator = model.as_any().downcast_ref::<GgufGenerator>().ok_or_else(|| {
+            InferenceError::ExecutionFailed("model does not support streaming".into())
+        })?;
+
+        generator.generate_stream(prompt, config, sender)
+    }
 }
 
 #[cfg(test)]

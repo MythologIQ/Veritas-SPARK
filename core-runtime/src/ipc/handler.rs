@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 use thiserror::Error;
+use tokio_util::sync::CancellationToken;
 
 use super::auth::{AuthError, SessionAuth, SessionToken};
 use super::health_handler::HealthHandler;
@@ -10,6 +11,8 @@ use super::protocol::{
     ModelsListResponse, ProtocolError, ProtocolVersion, StreamChunk, WarmupResponse,
 };
 use crate::engine::InferenceEngine;
+#[cfg(feature = "gguf")]
+use crate::engine::TokenStream;
 use crate::health::HealthChecker;
 use crate::models::ModelRegistry;
 use crate::scheduler::Priority;
@@ -329,19 +332,19 @@ impl IpcHandler {
         }
     }
 
-    /// Process streaming inference request. Sends chunks via sender.
+    /// Process streaming inference request. Sends token chunks via sender.
     ///
-    /// NOTE: Streaming is not yet implemented. This method returns an error
-    /// to fail fast rather than silently returning placeholder data.
-    /// Target: v0.7.0+ for real streaming support.
+    /// Creates a token stream channel, spawns inference on a blocking task,
+    /// and relays tokens to the client until completion or cancellation.
+    #[allow(unused_variables)]
     pub async fn process_streaming(
         &self,
         request: InferenceRequest,
         session: &SessionToken,
         sender: &dyn StreamSender,
+        cancel: CancellationToken,
     ) -> Result<(), HandlerError> {
         self.auth.validate(session).await?;
-
         let _guard = self.shutdown.track().ok_or(HandlerError::ShuttingDown)?;
 
         if let Err(e) = request.validate() {
@@ -350,14 +353,75 @@ impl IpcHandler {
             return Ok(());
         }
 
-        // FAIL-FAST: Streaming not implemented - return explicit error
-        // Real streaming requires TokenStream integration with inference loop.
-        // Use non-streaming inference (stream: false) until v0.7.0.
-        let chunk = StreamChunk::error(
-            request.request_id,
-            "Streaming not implemented. Use stream: false for inference.".into(),
-        );
-        sender.send(IpcMessage::StreamChunk(chunk)).await?;
+        // Streaming requires gguf feature
+        #[cfg(not(feature = "gguf"))]
+        {
+            let chunk = StreamChunk::error(
+                request.request_id,
+                "Streaming requires GGUF feature. Rebuild with --features gguf.".into(),
+            );
+            sender.send(IpcMessage::StreamChunk(chunk)).await?;
+            return Ok(());
+        }
+
+        #[cfg(feature = "gguf")]
+        {
+            self.run_streaming_inference(request, sender, cancel).await
+        }
+    }
+
+    /// Internal streaming implementation (gguf feature only).
+    #[cfg(feature = "gguf")]
+    async fn run_streaming_inference(
+        &self,
+        request: InferenceRequest,
+        sender: &dyn StreamSender,
+        cancel: CancellationToken,
+    ) -> Result<(), HandlerError> {
+        let request_id = request.request_id;
+        let model_id = request.model_id.clone();
+        let prompt = request.prompt.clone();
+        let config = request.parameters.to_config();
+        let engine = Arc::clone(&self.inference_engine);
+
+        // Create channel for token streaming
+        let (token_sender, mut stream) = TokenStream::new(32);
+
+        // Spawn blocking inference task
+        let inf_handle = tokio::task::spawn_blocking(move || {
+            engine.run_stream_sync(&model_id, &prompt, &config, token_sender)
+        });
+
+        // Relay tokens to IPC, handling cancellation
+        loop {
+            tokio::select! {
+                biased;
+                _ = cancel.cancelled() => {
+                    let chunk = StreamChunk::error(request_id, "cancelled".into());
+                    let _ = sender.send(IpcMessage::StreamChunk(chunk)).await;
+                    break;
+                }
+                token_opt = stream.next() => {
+                    match token_opt {
+                        Some(output) => {
+                            let chunk = if output.is_final {
+                                StreamChunk::final_token(request_id, output.token)
+                            } else {
+                                StreamChunk::token(request_id, output.token)
+                            };
+                            sender.send(IpcMessage::StreamChunk(chunk)).await?;
+                            if output.is_final {
+                                break;
+                            }
+                        }
+                        None => break, // Channel closed
+                    }
+                }
+            }
+        }
+
+        // Wait for inference task (ignore result - tokens already sent)
+        let _ = inf_handle.await;
         Ok(())
     }
 }

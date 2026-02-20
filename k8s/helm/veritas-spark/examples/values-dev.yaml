@@ -1,4 +1,4 @@
-# Veritas SDR Development Values
+# Veritas SPARK Development Values
 # Minimal configuration for local development and evaluation
 # Suitable for: CPU-only testing, development, CI/CD
 
@@ -8,7 +8,7 @@ replicaCount: 1
 
 # Container image configuration
 image:
-  repository: veritas-sdr/core
+  repository: veritas-spark/core
   pullPolicy: IfNotPresent
   tag: "0.6.5"
 

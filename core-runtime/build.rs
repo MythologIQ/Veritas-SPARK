@@ -1,7 +1,7 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Build script for Veritas SDR
+//! Build script for Veritas SPARK
 //!
 //! Generates C header file when `ffi` feature is enabled.
 

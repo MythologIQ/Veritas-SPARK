@@ -1,4 +1,4 @@
-# Fuzz Testing for Veritas SDR
+# Fuzz Testing for Veritas SPARK
 
 This directory contains fuzz testing targets for security-critical parsing code.
 

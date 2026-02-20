@@ -9,7 +9,7 @@
 
 ## Context
 
-Veritas SDR v0.6.0 introduces production-grade deployment capabilities. The system requires deployment strategies that:
+Veritas SPARK v0.6.0 introduces production-grade deployment capabilities. The system requires deployment strategies that:
 
 1. Minimize downtime during updates
 2. Enable safe rollback on failure detection
@@ -175,10 +175,10 @@ impl CanaryController {
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-active
+  name: {{ include "veritas-spark.fullname" . }}-active
 spec:
   selector:
-    app.kubernetes.io/name: {{ include "veritas-sdr.name" . }}
+    app.kubernetes.io/name: {{ include "veritas-spark.name" . }}
     app.kubernetes.io/version: {{ .Values.activeVersion }}  # "blue" or "green"
   ports:
     - port: {{ .Values.service.port }}

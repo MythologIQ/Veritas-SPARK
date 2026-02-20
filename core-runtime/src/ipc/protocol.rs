@@ -162,6 +162,9 @@ impl InferenceResponse {
 pub struct StreamChunk {
     pub request_id: RequestId,
     pub token: u32,
+    /// Decoded text for this token (optional, for client display).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
     pub is_final: bool,
     pub error: Option<String>,
 }
@@ -172,6 +175,18 @@ impl StreamChunk {
         Self {
             request_id,
             token,
+            text: None,
+            is_final: false,
+            error: None,
+        }
+    }
+
+    /// Create a token chunk with decoded text.
+    pub fn token_with_text(request_id: RequestId, token: u32, text: String) -> Self {
+        Self {
+            request_id,
+            token,
+            text: Some(text),
             is_final: false,
             error: None,
         }
@@ -182,6 +197,18 @@ impl StreamChunk {
         Self {
             request_id,
             token,
+            text: None,
+            is_final: true,
+            error: None,
+        }
+    }
+
+    /// Create a final token chunk with decoded text.
+    pub fn final_token_with_text(request_id: RequestId, token: u32, text: String) -> Self {
+        Self {
+            request_id,
+            token,
+            text: Some(text),
             is_final: true,
             error: None,
         }
@@ -192,6 +219,7 @@ impl StreamChunk {
         Self {
             request_id,
             token: 0,
+            text: None,
             is_final: true,
             error: Some(error),
         }

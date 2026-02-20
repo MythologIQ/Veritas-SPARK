@@ -155,4 +155,8 @@ impl super::GgufModel for GgufGenerator {
         }
         Ok(())
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

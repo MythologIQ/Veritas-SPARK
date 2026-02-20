@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! CRD type definitions for Kubernetes operator.
@@ -444,7 +444,7 @@ mod tests {
             },
             spec: VeritasRuntimeSpec {
                 replicas: 3,
-                image: "veritas-sdr:0.5.0".to_string(),
+                image: "veritas-spark:0.5.0".to_string(),
                 memory: "4Gi".to_string(),
                 cpu: "2".to_string(),
                 gpu: None,
@@ -465,7 +465,7 @@ mod tests {
     fn test_runtime_spec_with_gpu() {
         let spec = VeritasRuntimeSpec {
             replicas: 2,
-            image: "veritas-sdr:0.5.0".to_string(),
+            image: "veritas-spark:0.5.0".to_string(),
             memory: "8Gi".to_string(),
             cpu: "4".to_string(),
             gpu: Some(GpuSpec {
@@ -847,9 +847,9 @@ mod tests {
 
     #[test]
     fn test_validate_image_valid() {
-        assert!(validate_image("veritas-sdr:0.5.0").is_ok());
-        assert!(validate_image("registry.io/veritas-sdr:latest").is_ok());
-        assert!(validate_image("veritas-sdr").is_ok());
+        assert!(validate_image("veritas-spark:0.5.0").is_ok());
+        assert!(validate_image("registry.io/veritas-spark:latest").is_ok());
+        assert!(validate_image("veritas-spark").is_ok());
     }
 
     #[test]
@@ -936,7 +936,7 @@ mod tests {
     fn test_runtime_spec_validate() {
         let valid_spec = VeritasRuntimeSpec {
             replicas: 2,
-            image: "veritas-sdr:0.5.0".to_string(),
+            image: "veritas-spark:0.5.0".to_string(),
             memory: "4Gi".to_string(),
             cpu: "2".to_string(),
             gpu: None,

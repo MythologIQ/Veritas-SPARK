@@ -1,9 +1,9 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! IPC client for CLI commands.
 //!
-//! Connects to running Veritas SDR instance via named pipe/Unix socket
+//! Connects to running Veritas SPARK instance via named pipe/Unix socket
 //! to perform health checks and other operations.
 
 use std::time::Duration;
@@ -12,9 +12,10 @@ use thiserror::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::time::timeout;
 
+use crate::engine::InferenceParams;
 use crate::ipc::protocol::{
-    decode_message, encode_message, HealthCheckResponse, HealthCheckType, IpcMessage,
-    ModelsListResponse,
+    decode_message, encode_message, HealthCheckResponse, HealthCheckType, InferenceRequest,
+    IpcMessage, ModelsListResponse, RequestId,
 };
 use crate::telemetry::MetricsSnapshot;
 
@@ -103,6 +104,134 @@ impl CliIpcClient {
             IpcMessage::Error { message, .. } => Err(CliError::Protocol(message)),
             _ => Err(CliError::Protocol("Unexpected response type".to_string())),
         }
+    }
+
+    /// Send inference request and return response text.
+    pub async fn send_inference(
+        &self,
+        model_id: &str,
+        prompt: &str,
+        params: &InferenceParams,
+    ) -> Result<String, CliError> {
+        let request = InferenceRequest {
+            request_id: RequestId(1),
+            model_id: model_id.to_string(),
+            prompt: prompt.to_string(),
+            parameters: params.clone(),
+        };
+        let message = IpcMessage::InferenceRequest(request);
+        let request_bytes =
+            encode_message(&message).map_err(|e| CliError::Protocol(e.to_string()))?;
+
+        let response_bytes = self.send_receive(&request_bytes).await?;
+        let response =
+            decode_message(&response_bytes).map_err(|e| CliError::Protocol(e.to_string()))?;
+
+        match response {
+            IpcMessage::InferenceResponse(resp) => Ok(resp.output),
+            IpcMessage::Error { message, .. } => Err(CliError::Protocol(message)),
+            _ => Err(CliError::Protocol("Unexpected response type".to_string())),
+        }
+    }
+
+    /// Send streaming inference request, printing tokens as they arrive.
+    pub async fn send_streaming_inference(
+        &self,
+        model_id: &str,
+        prompt: &str,
+        params: &InferenceParams,
+    ) -> Result<String, CliError> {
+        let mut params = params.clone();
+        params.stream = true;
+
+        let request = InferenceRequest {
+            request_id: RequestId(1),
+            model_id: model_id.to_string(),
+            prompt: prompt.to_string(),
+            parameters: params,
+        };
+        let message = IpcMessage::InferenceRequest(request);
+        let request_bytes =
+            encode_message(&message).map_err(|e| CliError::Protocol(e.to_string()))?;
+
+        self.receive_streaming_response(&request_bytes).await
+    }
+
+    #[cfg(unix)]
+    async fn receive_streaming_response(&self, request: &[u8]) -> Result<String, CliError> {
+        use tokio::net::UnixStream;
+
+        let connect_future = UnixStream::connect(&self.socket_path);
+        let mut stream = timeout(self.timeout_duration, connect_future)
+            .await
+            .map_err(|_| CliError::Timeout)?
+            .map_err(|e| CliError::ConnectionFailed(e.to_string()))?;
+
+        self.stream_exchange(&mut stream, request).await
+    }
+
+    #[cfg(windows)]
+    async fn receive_streaming_response(&self, request: &[u8]) -> Result<String, CliError> {
+        use tokio::net::windows::named_pipe::ClientOptions;
+
+        let connect_future = ClientOptions::new().open(&self.socket_path);
+        let mut pipe = timeout(self.timeout_duration, async { connect_future })
+            .await
+            .map_err(|_| CliError::Timeout)?
+            .map_err(|e| CliError::ConnectionFailed(e.to_string()))?;
+
+        self.stream_exchange(&mut pipe, request).await
+    }
+
+    async fn stream_exchange<S>(&self, stream: &mut S, request: &[u8]) -> Result<String, CliError>
+    where
+        S: AsyncReadExt + AsyncWriteExt + Unpin,
+    {
+        // Send length-prefixed request
+        let len = request.len() as u32;
+        stream.write_all(&len.to_le_bytes()).await?;
+        stream.write_all(request).await?;
+        stream.flush().await?;
+
+        let mut full_output = String::new();
+
+        // Read streaming chunks until final
+        loop {
+            let mut len_buf = [0u8; 4];
+            stream.read_exact(&mut len_buf).await?;
+            let response_len = u32::from_le_bytes(len_buf) as usize;
+
+            if response_len > 16 * 1024 * 1024 {
+                return Err(CliError::Protocol("Response too large".to_string()));
+            }
+
+            let mut response = vec![0u8; response_len];
+            stream.read_exact(&mut response).await?;
+
+            let message =
+                decode_message(&response).map_err(|e| CliError::Protocol(e.to_string()))?;
+
+            match message {
+                IpcMessage::StreamChunk(chunk) => {
+                    if let Some(text) = &chunk.text {
+                        print!("{}", text);
+                        full_output.push_str(text);
+                    }
+                    if chunk.is_final {
+                        println!();
+                        break;
+                    }
+                }
+                IpcMessage::Error { message, .. } => {
+                    return Err(CliError::Protocol(message));
+                }
+                _ => {
+                    return Err(CliError::Protocol("Unexpected response type".to_string()));
+                }
+            }
+        }
+
+        Ok(full_output)
     }
 
     async fn send_health_request(

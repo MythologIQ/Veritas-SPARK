@@ -1,5 +1,6 @@
 #!/bin/bash
-# Veritas SDR Model Download Script
+# Veritas SPARK Model Download Script
+# SPARK = Secure Performance-Accelerated Runtime Kernel
 # Downloads recommended GGUF models for testing and production
 
 set -e
@@ -7,8 +8,8 @@ set -e
 TIER="${1:-default}"
 MODELS_DIR="${2:-models}"
 
-echo "Veritas SDR Model Downloader"
-echo "============================="
+echo "Veritas SPARK Model Downloader"
+echo "==============================="
 echo ""
 
 # Ensure models directory exists
@@ -110,4 +111,4 @@ echo ""
 echo "Done! Models ready in: $MODELS_DIR"
 echo ""
 echo "Register models with:"
-echo "  veritas-sdr-cli model register --name <name> --path models/<file>.gguf --format gguf"
+echo "  veritas-spark-cli model register --name <name> --path models/<file>.gguf --format gguf"

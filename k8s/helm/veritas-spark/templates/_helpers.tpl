@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "veritas-sdr.name" -}}
+{{- define "veritas-spark.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "veritas-sdr.fullname" -}}
+{{- define "veritas-spark.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,16 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "veritas-sdr.chart" -}}
+{{- define "veritas-spark.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "veritas-sdr.labels" -}}
-helm.sh/chart: {{ include "veritas-sdr.chart" . }}
-{{ include "veritas-sdr.selectorLabels" . }}
+{{- define "veritas-spark.labels" -}}
+helm.sh/chart: {{ include "veritas-spark.chart" . }}
+{{ include "veritas-spark.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,17 +43,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "veritas-sdr.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "veritas-sdr.name" . }}
+{{- define "veritas-spark.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "veritas-spark.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "veritas-sdr.serviceAccountName" -}}
+{{- define "veritas-spark.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "veritas-sdr.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "veritas-spark.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

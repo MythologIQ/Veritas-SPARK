@@ -1,14 +1,14 @@
-# Veritas SDR: Honest Assessment
+# Veritas SPARK: Honest Assessment
 
-**Document Purpose:** Transparent, evidence-based evaluation of claims  
-**Date:** 2026-02-16  
+**Document Purpose:** Transparent, evidence-based evaluation of claims
+**Date:** 2026-02-16
 **Status:** Living Document
 
 ---
 
 ## Executive Summary
 
-Veritas SDR is a **security-first inference runtime** with real advantages for specific use cases. This document provides an honest assessment of what we've built, what's verified, and what needs validation.
+Veritas SPARK (Secure Performance-Accelerated Runtime Kernel) is a **security-first inference runtime** with real advantages for specific use cases. This document provides an honest assessment of what we've built, what's verified, and what needs validation.
 
 ---
 
@@ -57,7 +57,7 @@ Veritas SDR is a **security-first inference runtime** with real advantages for s
 | Architecture          | Overhead | Why                                              |
 | --------------------- | -------- | ------------------------------------------------ |
 | **HTTP/REST**         | 1-10 ms  | JSON serialization, TCP handshake, HTTP parsing  |
-| **IPC (Veritas SDR)** | 361 ns   | Binary protocol, shared memory, no network stack |
+| **IPC (Veritas SPARK)** | 361 ns   | Binary protocol, shared memory, no network stack |
 
 **The math:** HTTP is inherently slower. Our advantage is choosing NOT to use HTTP, not inventing faster IPC.
 
@@ -67,10 +67,10 @@ Veritas SDR is a **security-first inference runtime** with real advantages for s
 
 ### Why This Matters
 
-Veritas SDR uses llama.cpp bindings (`llama-cpp-2` crate). The fair comparison is:
+Veritas SPARK uses llama.cpp bindings (`llama-cpp-2` crate). The fair comparison is:
 
 ```
-Veritas SDR overhead = Veritas SDR latency - llama.cpp CLI latency
+Veritas SPARK overhead = Veritas SPARK latency - llama.cpp CLI latency
 ```
 
 ### What We Expect
@@ -150,7 +150,7 @@ Veritas SDR overhead = Veritas SDR latency - llama.cpp CLI latency
 
 # Measurements
 - llama.cpp CLI: time to first token, tokens/sec, total latency
-- Veritas SDR: same metrics + security overhead breakdown
+- Veritas SPARK: same metrics + security overhead breakdown
 
 # Expected outcome
 - Quantify exact overhead of security features
@@ -171,9 +171,9 @@ Veritas SDR overhead = Veritas SDR latency - llama.cpp CLI latency
 
 ## 6. Competitive Positioning (Honest)
 
-### Where Veritas SDR Wins
+### Where Veritas SPARK Wins
 
-| Use Case                           | Why Veritas SDR                       |
+| Use Case                           | Why Veritas SPARK                       |
 | ---------------------------------- | ------------------------------------- |
 | **Air-gapped environments**        | No network, no external dependencies  |
 | **Compliance-heavy industries**    | Built-in audit logging, PII detection |
@@ -191,7 +191,7 @@ Veritas SDR overhead = Veritas SDR latency - llama.cpp CLI latency
 
 ### Honest Comparison Matrix
 
-| Feature               | Veritas SDR      | Ollama      | vLLM        | llama.cpp |
+| Feature               | Veritas SPARK      | Ollama      | vLLM        | llama.cpp |
 | --------------------- | ---------------- | ----------- | ----------- | --------- |
 | **Security features** | ✅ Comprehensive | ⚠️ Basic    | ⚠️ Basic    | ❌ None   |
 | **Air-gapped**        | ✅ Native        | ⚠️ Possible | ⚠️ Possible | ✅ Yes    |
@@ -237,5 +237,5 @@ Veritas SDR overhead = Veritas SDR latency - llama.cpp CLI latency
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors  
+Copyright 2024-2026 Veritas SPARK Contributors  
 Licensed under the Apache License, Version 2.0

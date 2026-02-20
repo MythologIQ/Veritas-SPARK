@@ -7,14 +7,18 @@
 //! All connections use length-prefixed framing (4-byte LE + payload)
 //! matching the CLI client protocol in `cli::ipc_client`.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::watch;
+use tokio::sync::{watch, Mutex};
+use tokio_util::sync::CancellationToken;
 use thiserror::Error;
 
 use super::connections::{ConnectionPool, OwnedConnectionGuard};
 use super::handler::IpcHandler;
+use super::protocol::{decode_message, encode_message, IpcMessage};
+use super::stream_bridge::IpcStreamBridge;
 
 /// Maximum allowed message frame size (16 MB).
 const MAX_FRAME_SIZE: usize = 16 * 1024 * 1024;
@@ -60,21 +64,34 @@ async fn write_frame<W: AsyncWriteExt + Unpin>(
     Ok(())
 }
 
+/// Write a frame using a locked writer.
+async fn write_frame_locked<W: AsyncWriteExt + Unpin>(
+    writer: &Arc<Mutex<W>>,
+    data: &[u8],
+) -> Result<(), ServerError> {
+    let mut w = writer.lock().await;
+    write_frame(&mut *w, data).await
+}
+
 /// Handle one IPC connection: read requests, dispatch, write responses.
-async fn handle_connection<S: AsyncReadExt + AsyncWriteExt + Unpin>(
-    mut stream: S,
+/// Supports both synchronous request/response and streaming inference.
+async fn handle_connection<S: AsyncReadExt + AsyncWriteExt + Unpin + Send + 'static>(
+    stream: S,
     handler: Arc<IpcHandler>,
     _guard: OwnedConnectionGuard,
 ) {
+    let (mut read_half, write_half) = tokio::io::split(stream);
+    let write_half = Arc::new(Mutex::new(write_half));
     let mut session = None;
+    let mut active_streams: HashMap<u64, CancellationToken> = HashMap::new();
 
     loop {
-        let request_bytes = match read_frame(&mut stream).await {
+        let request_bytes = match read_frame(&mut read_half).await {
             Ok(bytes) => bytes,
             Err(ServerError::Io(ref e))
                 if e.kind() == std::io::ErrorKind::UnexpectedEof =>
             {
-                break; // Client disconnected
+                break;
             }
             Err(e) => {
                 eprintln!("Connection read error: {}", e);
@@ -82,23 +99,69 @@ async fn handle_connection<S: AsyncReadExt + AsyncWriteExt + Unpin>(
             }
         };
 
-        match handler.process(&request_bytes, session.as_ref()).await {
-            Ok((response_bytes, new_session)) => {
-                if new_session.is_some() {
-                    session = new_session;
-                }
-                if let Err(e) = write_frame(&mut stream, &response_bytes).await {
-                    eprintln!("Connection write error: {}", e);
-                    break;
+        // Parse message to detect streaming vs non-streaming
+        let message = match decode_message(&request_bytes) {
+            Ok(m) => m,
+            Err(e) => {
+                let err = format!(r#"{{"type":"error","code":400,"message":"{}"}}"#, e);
+                let _ = write_frame_locked(&write_half, err.as_bytes()).await;
+                continue;
+            }
+        };
+
+        match message {
+            // Streaming inference request
+            IpcMessage::InferenceRequest(ref req) if req.parameters.stream => {
+                if let Some(ref sess) = session {
+                    let cancel = CancellationToken::new();
+                    active_streams.insert(req.request_id.0, cancel.clone());
+                    let bridge = IpcStreamBridge::new(
+                        Arc::clone(&write_half),
+                        req.request_id,
+                        cancel.clone(),
+                    );
+                    let _ = handler
+                        .process_streaming(req.clone(), sess, &bridge, cancel)
+                        .await;
+                    active_streams.remove(&req.request_id.0);
+                } else {
+                    let err = r#"{"type":"error","code":401,"message":"Not authenticated"}"#;
+                    let _ = write_frame_locked(&write_half, err.as_bytes()).await;
                 }
             }
-            Err(e) => {
-                let err = format!(
-                    r#"{{"type":"error","code":500,"message":"{}"}}"#,
-                    e
-                );
-                let _ = write_frame(&mut stream, err.as_bytes()).await;
-                break;
+
+            // Cancel request - trigger cancellation for active streams
+            IpcMessage::CancelRequest { request_id } => {
+                let cancelled = if let Some(cancel) = active_streams.get(&request_id.0) {
+                    cancel.cancel();
+                    true
+                } else {
+                    false
+                };
+                let response = IpcMessage::CancelResponse { request_id, cancelled };
+                if let Ok(bytes) = encode_message(&response) {
+                    let _ = write_frame_locked(&write_half, &bytes).await;
+                }
+            }
+
+            // Non-streaming: use standard request/response processing
+            _ => {
+                match handler.process(&request_bytes, session.as_ref()).await {
+                    Ok((response_bytes, new_session)) => {
+                        if new_session.is_some() {
+                            session = new_session;
+                        }
+                        if let Err(e) = write_frame_locked(&write_half, &response_bytes).await {
+                            eprintln!("Connection write error: {}", e);
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        let err = format!(r#"{{"type":"error","code":500,"message":"{}"}}"#, e);
+                        let _ = write_frame_locked(&write_half, err.as_bytes()).await;
+                        break;
+                    }
+                }
             }
         }
     }

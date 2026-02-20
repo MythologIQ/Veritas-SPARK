@@ -1,7 +1,7 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Python bindings for Veritas SDR using PyO3
+//! Python bindings for Veritas SPARK using PyO3
 //!
 //! Provides a Pythonic API for the inference runtime with both
 //! synchronous and asynchronous interfaces.
@@ -15,7 +15,7 @@ mod streaming;
 
 use pyo3::prelude::*;
 
-/// Veritas SDR Python module
+/// Veritas SPARK Python module
 ///
 /// Example usage:
 /// ```python

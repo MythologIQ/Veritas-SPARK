@@ -1,4 +1,4 @@
-# Veritas SDR Documentation
+# Veritas SPARK Documentation
 
 **Version:** 0.6.5
 **License:** Apache 2.0
@@ -23,9 +23,9 @@
 
 ## Overview
 
-**Veritas SDR** - Secure Deterministic Runtime
+**Veritas SPARK** (Secure Performance-Accelerated Runtime Kernel)
 
-**Veritas** (Truth, Integrity, Correctness) + **SDR** (Secure Deterministic Runtime)
+**Veritas** (Truth, Integrity, Correctness) + **SPARK** (Secure Performance-Accelerated Runtime Kernel)
 
 An enterprise-grade inference runtime designed for security-critical applications. It provides:
 
@@ -89,7 +89,7 @@ cargo build --release --features onnx,gguf # Both backends
 ### 1. Start the Runtime
 
 ```rust
-use veritas_sdr::{Runtime, RuntimeConfig};
+use veritas_spark::{Runtime, RuntimeConfig};
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -107,7 +107,7 @@ let runtime = Runtime::new(config);
 ### 2. Load a Model
 
 ```rust
-use veritas_sdr::models::{ModelLoader, ModelManifest};
+use veritas_spark::models::{ModelLoader, ModelManifest};
 
 // Load GGUF model
 let gguf_model = ModelLoader::load_gguf("phi-3-mini-q4km.gguf").await?;
@@ -119,7 +119,7 @@ let onnx_model = ModelLoader::load_onnx("bert-classifier.onnx").await?;
 ### 3. Run Inference
 
 ```rust
-use veritas_sdr::engine::{InferenceInput, InferenceOutput, InferenceParams};
+use veritas_spark::engine::{InferenceInput, InferenceOutput, InferenceParams};
 
 let input = InferenceInput::Text("Analyze this text for sentiment.".to_string());
 let params = InferenceParams::default();
@@ -166,7 +166,7 @@ Available for Model Inference: 99.99964%
 
 | Runtime         | Infrastructure Overhead | Advantage                   |
 | --------------- | ----------------------- | --------------------------- |
-| **Veritas SDR** | 361 ns                  | Baseline                    |
+| **Veritas SPARK** | 361 ns                  | Baseline                    |
 | Ollama          | 1-10 ms                 | **2,770x - 27,700x** faster |
 | llama.cpp       | 0.5-5 ms                | **1,385x - 13,850x** faster |
 | vLLM            | 0.6-2.3 ms              | **1,660x - 6,370x** faster  |
@@ -187,8 +187,8 @@ Available for Model Inference: 99.99964%
 ### Text Classification (ONNX)
 
 ```rust
-use veritas_sdr::engine::{ClassificationResult, InferenceInput, OnnxConfig};
-use veritas_sdr::engine::onnx::OnnxDevice;
+use veritas_spark::engine::{ClassificationResult, InferenceInput, OnnxConfig};
+use veritas_spark::engine::onnx::OnnxDevice;
 
 // Configure ONNX backend
 let config = OnnxConfig {
@@ -212,8 +212,8 @@ println!("Sentiment: {} ({:.1}% confidence)",
 ### Text Generation (GGUF)
 
 ```rust
-use veritas_sdr::engine::{GgufConfig, GenerationResult, InferenceParams};
-use veritas_sdr::models::ModelLoader;
+use veritas_spark::engine::{GgufConfig, GenerationResult, InferenceParams};
+use veritas_spark::models::ModelLoader;
 
 // Load GGUF model
 let model = ModelLoader::load_gguf("phi-3-mini-q4km.gguf").await?;
@@ -236,7 +236,7 @@ println!("Generated: {}", result.text);
 ### Streaming Output
 
 ```rust
-use veritas_sdr::engine::StreamingOutput;
+use veritas_spark::engine::StreamingOutput;
 
 // Stream tokens as they're generated
 let mut stream = model.generate_stream(input, params).await?;
@@ -255,7 +255,7 @@ while let Some(chunk) = stream.next().await {
 ### Security: Prompt Injection Detection
 
 ```rust
-use veritas_sdr::security::{PromptInjectionFilter, SecurityConfig};
+use veritas_spark::security::{PromptInjectionFilter, SecurityConfig};
 
 let filter = PromptInjectionFilter::new(SecurityConfig::default());
 
@@ -273,7 +273,7 @@ if result.blocked {
 ### Security: PII Detection
 
 ```rust
-use veritas_sdr::security::PIIDetector;
+use veritas_spark::security::PIIDetector;
 
 let detector = PIIDetector::new();
 
@@ -366,7 +366,7 @@ println!("Redacted: {}", redacted);
 
 #### Newer Model Highlights
 
-| Model           | Key Features                                | Best For                   | Veritas SDR Support  |
+| Model           | Key Features                                | Best For                   | Veritas SPARK Support  |
 | --------------- | ------------------------------------------- | -------------------------- | -------------------- |
 | **Qwen3 Coder** | State-of-art code generation, 119 languages | Code completion, debugging | ✅ Full GGUF support |
 | **DeepSeek R1** | Reasoning model, chain-of-thought           | Complex reasoning tasks    | ✅ Full GGUF support |
@@ -424,7 +424,7 @@ println!("Redacted: {}", redacted);
 ### Runtime Configuration
 
 ```rust
-use veritas_sdr::{RuntimeConfig, SecurityConfig};
+use veritas_spark::{RuntimeConfig, SecurityConfig};
 use std::time::Duration;
 
 let config = RuntimeConfig {
@@ -463,7 +463,7 @@ let config = RuntimeConfig {
 ### Security Configuration
 
 ```rust
-use veritas_sdr::security::SecurityConfig;
+use veritas_spark::security::SecurityConfig;
 
 let security = SecurityConfig {
     // Prompt Injection
@@ -621,10 +621,10 @@ Query live runtime diagnostics via IPC (named pipes). Safe for external system i
 
 ```bash
 # Human-readable output
-veritas-sdr-cli status
+veritas-spark-cli status
 
 # JSON output for programmatic consumption
-veritas-sdr-cli status --json
+veritas-spark-cli status --json
 ```
 
 **Output Sections**:
@@ -683,13 +683,13 @@ For Kubernetes liveness/readiness:
 
 ```bash
 # Liveness probe (is process alive?)
-veritas-sdr-cli health --liveness
+veritas-spark-cli health --liveness
 
 # Readiness probe (is model loaded and accepting requests?)
-veritas-sdr-cli health --readiness
+veritas-spark-cli health --readiness
 
 # Full health report
-veritas-sdr-cli health --full
+veritas-spark-cli health --full
 ```
 
 **Exit Codes**:
@@ -777,5 +777,5 @@ External systems can query model status via the IPC protocol:
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors
+Copyright 2024-2026 Veritas SPARK Contributors
 Licensed under the Apache License, Version 2.0

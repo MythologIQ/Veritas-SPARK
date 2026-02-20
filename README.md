@@ -1,6 +1,6 @@
-# Veritas SDR
+# Veritas SPARK
 
-**Veritas** (Truth, Integrity, Correctness) + **SDR** (Secure Deterministic Runtime)
+**Veritas** (Truth, Integrity, Correctness) + **SPARK** (Secure Performance-Accelerated Runtime Kernel)
 
 A security-first inference runtime for air-gapped and compliance-sensitive environments.
 
@@ -11,13 +11,13 @@ A security-first inference runtime for air-gapped and compliance-sensitive envir
 
 ---
 
-## Why Veritas SDR?
+## Why Veritas SPARK?
 
 ### ⚡Up to 27,000x Faster Infrastructure
 
-| Runtime | Overhead | vs Veritas SDR |
+| Runtime | Overhead | vs Veritas SPARK |
 |---------|----------|----------------|
-| **Veritas SDR** | **361 ns** | — |
+| **Veritas SPARK** | **361 ns** | — |
 | Ollama | 1-10 ms | 2,770x - 27,700x slower |
 | llama.cpp server | 0.5-5 ms | 1,385x - 13,850x slower |
 | vLLM | 0.6-2.3 ms | 1,660x - 6,370x slower |
@@ -40,7 +40,7 @@ Air-gapped deployments. FIPS-ready cryptography. Full audit logging.
 
 ## Overview
 
-Veritas SDR is a sandboxed, offline inference engine providing comprehensive security isolation with zero network dependencies. Designed for air-gapped deployments and compliance-sensitive environments requiring predictable performance and strict security controls.
+Veritas SPARK is a sandboxed, offline inference engine providing comprehensive security isolation with zero network dependencies. Designed for air-gapped deployments and compliance-sensitive environments requiring predictable performance and strict security controls.
 
 ### Key Features
 
@@ -111,10 +111,10 @@ Query real-time runtime diagnostics via secure IPC:
 
 ```bash
 # Human-readable output
-veritas-sdr-cli status
+veritas-spark-cli status
 
 # JSON output for external systems
-veritas-sdr-cli status --json
+veritas-spark-cli status --json
 ```
 
 **Live Metrics Available**:
@@ -134,8 +134,8 @@ veritas-sdr-cli status --json
 Kubernetes-ready health endpoints:
 
 ```bash
-veritas-sdr-cli health --liveness   # Process alive?
-veritas-sdr-cli health --readiness  # Model loaded?
+veritas-spark-cli health --liveness   # Process alive?
+veritas-spark-cli health --readiness  # Model loaded?
 ```
 
 See [Usage Guide](docs/USAGE_GUIDE.md#cli-commands) for full CLI documentation.
@@ -146,7 +146,7 @@ See [Usage Guide](docs/USAGE_GUIDE.md#cli-commands) for full CLI documentation.
 
 ```
 +-------------------------------------------------------------+
-|                     Veritas SDR Runtime                      |
+|                     Veritas SPARK Runtime                      |
 +-------------------------------------------------------------+
 |  +-------------+  +-------------+  +---------------------+  |
 |  |   Security  |  |   Memory    |  |     Scheduler       |  |
@@ -192,9 +192,9 @@ See [Threat Model](docs/security/THREAT_MODEL.md) for detailed security analysis
 
 ### vs HTTP-Based Runtimes
 
-| Runtime          | Infrastructure Overhead | Veritas SDR Advantage       |
+| Runtime          | Infrastructure Overhead | Veritas SPARK Advantage       |
 | ---------------- | ----------------------- | --------------------------- |
-| **Veritas SDR**  | 361 ns                  | Baseline                    |
+| **Veritas SPARK**  | 361 ns                  | Baseline                    |
 | Ollama           | 1-10 ms                 | **2,770x - 27,700x faster** |
 | llama.cpp server | 0.5-5 ms                | **1,385x - 13,850x faster** |
 | vLLM             | 0.6-2.3 ms              | **1,660x - 6,370x faster**  |
@@ -265,9 +265,9 @@ See [Recommended Models](docs/RECOMMENDED_MODELS.md) for download instructions.
 ## Usage
 
 ```rust
-use veritas_sdr::engine::{InferenceEngine, InferenceInput, InferenceParams};
-use veritas_sdr::engine::gguf::{load_gguf_model, GgufConfig};
-use veritas_sdr::security::PromptInjectionFilter;
+use veritas_spark::engine::{InferenceEngine, InferenceInput, InferenceParams};
+use veritas_spark::engine::gguf::{load_gguf_model, GgufConfig};
+use veritas_spark::security::PromptInjectionFilter;
 use std::path::Path;
 
 // Security scan
@@ -357,4 +357,4 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ---
 
-Copyright 2024-2026 Veritas SDR Contributors
+Copyright 2024-2026 Veritas SPARK Contributors

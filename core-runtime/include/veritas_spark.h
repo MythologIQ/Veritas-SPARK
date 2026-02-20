@@ -1,13 +1,13 @@
 /*
- * Veritas SDR - Secure Deterministic Runtime
+ * Veritas SPARK - Secure Performance-Accelerated Runtime Kernel
  * C API Header
  *
- * Copyright 2024-2026 Veritas SDR Contributors
+ * Copyright 2024-2026 Veritas SPARK Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef VERITAS_SDR_H
-#define VERITAS_SDR_H
+#ifndef VERITAS_SPARK_H
+#define VERITAS_SPARK_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -430,4 +430,4 @@ void core_free_string(char *s);
 }
 #endif
 
-#endif /* VERITAS_SDR_H */
+#endif /* VERITAS_SPARK_H */

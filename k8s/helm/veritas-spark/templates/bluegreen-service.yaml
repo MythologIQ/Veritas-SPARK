@@ -4,9 +4,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-blue
+  name: {{ include "veritas-spark.fullname" . }}-blue
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
     veritas.hearthlink.ai/environment: blue
   annotations:
     veritas.hearthlink.ai/deployment-strategy: bluegreen
@@ -14,7 +14,7 @@ spec:
   replicas: {{ .Values.bluegreen.blue.replicas | default .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "veritas-sdr.selectorLabels" . | nindent 6 }}
+      {{- include "veritas-spark.selectorLabels" . | nindent 6 }}
       veritas.hearthlink.ai/environment: blue
   strategy:
     type: RollingUpdate
@@ -24,18 +24,18 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "veritas-sdr.selectorLabels" . | nindent 8 }}
+        {{- include "veritas-spark.selectorLabels" . | nindent 8 }}
         veritas.hearthlink.ai/environment: blue
         veritas.hearthlink.ai/version: {{ .Values.bluegreen.blue.version | quote }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
     spec:
-      serviceAccountName: {{ include "veritas-sdr.serviceAccountName" . }}
+      serviceAccountName: {{ include "veritas-spark.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: veritas-sdr
+        - name: veritas-spark
           image: "{{ .Values.image.repository }}:{{ .Values.bluegreen.blue.version }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -75,7 +75,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /app/veritas-sdr
+                - /app/veritas-spark
                 - live
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
@@ -86,7 +86,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /app/veritas-sdr
+                - /app/veritas-spark
                 - ready
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
@@ -120,9 +120,9 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-green
+  name: {{ include "veritas-spark.fullname" . }}-green
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
     veritas.hearthlink.ai/environment: green
   annotations:
     veritas.hearthlink.ai/deployment-strategy: bluegreen
@@ -130,7 +130,7 @@ spec:
   replicas: {{ .Values.bluegreen.green.replicas | default .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "veritas-sdr.selectorLabels" . | nindent 6 }}
+      {{- include "veritas-spark.selectorLabels" . | nindent 6 }}
       veritas.hearthlink.ai/environment: green
   strategy:
     type: RollingUpdate
@@ -140,18 +140,18 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "veritas-sdr.selectorLabels" . | nindent 8 }}
+        {{- include "veritas-spark.selectorLabels" . | nindent 8 }}
         veritas.hearthlink.ai/environment: green
         veritas.hearthlink.ai/version: {{ .Values.bluegreen.green.version | quote }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
     spec:
-      serviceAccountName: {{ include "veritas-sdr.serviceAccountName" . }}
+      serviceAccountName: {{ include "veritas-spark.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: veritas-sdr
+        - name: veritas-spark
           image: "{{ .Values.image.repository }}:{{ .Values.bluegreen.green.version }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -191,7 +191,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /app/veritas-sdr
+                - /app/veritas-spark
                 - live
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
@@ -202,7 +202,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /app/veritas-sdr
+                - /app/veritas-spark
                 - ready
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
@@ -237,9 +237,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-active
+  name: {{ include "veritas-spark.fullname" . }}-active
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
     veritas.hearthlink.ai/service-type: active
   annotations:
     veritas.hearthlink.ai/deployment-strategy: bluegreen
@@ -247,7 +247,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    {{- include "veritas-sdr.selectorLabels" . | nindent 4 }}
+    {{- include "veritas-spark.selectorLabels" . | nindent 4 }}
     veritas.hearthlink.ai/environment: {{ .Values.bluegreen.active }}
   ports: []
 ---
@@ -255,15 +255,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-blue
+  name: {{ include "veritas-spark.fullname" . }}-blue
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
     veritas.hearthlink.ai/service-type: environment
     veritas.hearthlink.ai/environment: blue
 spec:
   type: ClusterIP
   selector:
-    {{- include "veritas-sdr.selectorLabels" . | nindent 4 }}
+    {{- include "veritas-spark.selectorLabels" . | nindent 4 }}
     veritas.hearthlink.ai/environment: blue
   ports: []
 ---
@@ -271,15 +271,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-green
+  name: {{ include "veritas-spark.fullname" . }}-green
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
     veritas.hearthlink.ai/service-type: environment
     veritas.hearthlink.ai/environment: green
 spec:
   type: ClusterIP
   selector:
-    {{- include "veritas-sdr.selectorLabels" . | nindent 4 }}
+    {{- include "veritas-spark.selectorLabels" . | nindent 4 }}
     veritas.hearthlink.ai/environment: green
   ports: []
 {{- if .Values.bluegreen.preview.enabled }}
@@ -288,16 +288,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-preview
+  name: {{ include "veritas-spark.fullname" . }}-preview
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
     veritas.hearthlink.ai/service-type: preview
   annotations:
     veritas.hearthlink.ai/preview-environment: {{ eq .Values.bluegreen.active "blue" | ternary "green" "blue" | quote }}
 spec:
   type: ClusterIP
   selector:
-    {{- include "veritas-sdr.selectorLabels" . | nindent 4 }}
+    {{- include "veritas-spark.selectorLabels" . | nindent 4 }}
     # Selects the INACTIVE environment for preview
     veritas.hearthlink.ai/environment: {{ eq .Values.bluegreen.active "blue" | ternary "green" "blue" }}
   ports: []
@@ -307,27 +307,27 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-blue-pdb
+  name: {{ include "veritas-spark.fullname" . }}-blue-pdb
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
 spec:
   minAvailable: {{ .Values.bluegreen.pdb.minAvailable | default 1 }}
   selector:
     matchLabels:
-      {{- include "veritas-sdr.selectorLabels" . | nindent 6 }}
+      {{- include "veritas-spark.selectorLabels" . | nindent 6 }}
       veritas.hearthlink.ai/environment: blue
 ---
 # Pod Disruption Budget for Green
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "veritas-sdr.fullname" . }}-green-pdb
+  name: {{ include "veritas-spark.fullname" . }}-green-pdb
   labels:
-    {{- include "veritas-sdr.labels" . | nindent 4 }}
+    {{- include "veritas-spark.labels" . | nindent 4 }}
 spec:
   minAvailable: {{ .Values.bluegreen.pdb.minAvailable | default 1 }}
   selector:
     matchLabels:
-      {{- include "veritas-sdr.selectorLabels" . | nindent 6 }}
+      {{- include "veritas-spark.selectorLabels" . | nindent 6 }}
       veritas.hearthlink.ai/environment: green
 {{- end }}

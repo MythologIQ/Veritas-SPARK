@@ -1,0 +1,16 @@
+apiVersion: v2
+name: veritas-spark
+description: Veritas SPARK - Secure Deterministic Runtime for AI inference
+type: application
+version: 0.7.0
+appVersion: "0.7.0"
+keywords:
+  - ai
+  - inference
+  - runtime
+  - secure
+  - canary
+  - bluegreen
+home: https://github.com/MythologIQ/CORE
+maintainers:
+  - name: Veritas SPARK Contributors

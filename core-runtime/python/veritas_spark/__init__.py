@@ -1,4 +1,4 @@
-"""Veritas SDR - Secure Deterministic Runtime for Python
+"""Veritas SPARK - Secure Performance-Accelerated Runtime Kernel for Python
 
 A sandboxed, offline inference engine for LLM execution.
 

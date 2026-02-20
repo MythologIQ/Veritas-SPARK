@@ -1,7 +1,7 @@
-// Copyright 2024-2026 Veritas SDR Contributors
+// Copyright 2024-2026 Veritas SPARK Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! CLI module for Veritas SDR runtime commands.
+//! CLI module for Veritas SPARK runtime commands.
 //!
 //! Provides subcommands for health checks via IPC, enabling K8s exec probes
 //! without requiring HTTP endpoints. Maintains the Alcatraz principle.
@@ -9,10 +9,10 @@
 //! ## Usage
 //!
 //! ```bash
-//! veritas-sdr health   # Full health check, exits 0 on healthy
-//! veritas-sdr live     # Liveness probe, exits 0 if alive
-//! veritas-sdr ready    # Readiness probe, exits 0 if ready
-//! veritas-sdr status   # Show system status and statistics
+//! veritas-spark health   # Full health check, exits 0 on healthy
+//! veritas-spark live     # Liveness probe, exits 0 if alive
+//! veritas-spark ready    # Readiness probe, exits 0 if ready
+//! veritas-spark status   # Show system status and statistics
 //! ```
 
 pub mod health;
@@ -25,10 +25,10 @@ pub use status::{run_status, SystemStatus};
 
 /// Default socket path for IPC communication.
 #[cfg(unix)]
-pub const DEFAULT_SOCKET_PATH: &str = "/var/run/veritas/veritas-sdr.sock";
+pub const DEFAULT_SOCKET_PATH: &str = "/var/run/veritas/veritas-spark.sock";
 
 #[cfg(windows)]
-pub const DEFAULT_SOCKET_PATH: &str = r"\\.\pipe\veritas-sdr";
+pub const DEFAULT_SOCKET_PATH: &str = r"\\.\pipe\veritas-spark";
 
 /// Get socket path from environment or use default.
 pub fn get_socket_path() -> String {
@@ -42,13 +42,13 @@ mod tests {
     #[test]
     fn test_default_socket_path_unix() {
         #[cfg(unix)]
-        assert_eq!(DEFAULT_SOCKET_PATH, "/var/run/veritas/veritas-sdr.sock");
+        assert_eq!(DEFAULT_SOCKET_PATH, "/var/run/veritas/veritas-spark.sock");
     }
 
     #[test]
     fn test_default_socket_path_windows() {
         #[cfg(windows)]
-        assert_eq!(DEFAULT_SOCKET_PATH, r"\\.\pipe\veritas-sdr");
+        assert_eq!(DEFAULT_SOCKET_PATH, r"\\.\pipe\veritas-spark");
     }
 
     #[test]
