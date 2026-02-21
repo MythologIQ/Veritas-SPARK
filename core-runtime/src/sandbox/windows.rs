@@ -103,11 +103,11 @@ impl Sandbox for WindowsSandbox {
 fn apply_job_object_limits(config: &SandboxConfig) -> Result<isize, String> {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::System::JobObjects::{
-        CreateJobObjectW, JobObjectExtendedLimitInformation, SetInformationJobObject,
-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_JOB_MEMORY,
+        AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_JOB_MEMORY,
         JOB_OBJECT_LIMIT_JOB_TIME,
     };
-    use windows_sys::Win32::System::Threading::{AssignProcessToJobObject, GetCurrentProcess};
+    use windows_sys::Win32::System::Threading::GetCurrentProcess;
 
     unsafe {
         // Create a job object
