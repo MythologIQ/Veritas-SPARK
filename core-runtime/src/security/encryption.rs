@@ -1225,7 +1225,10 @@ mod tests {
     #[test]
     fn test_nonce_reuse_detection() {
         // Test that manually registering the same nonce twice fails
-        let nonce: [u8; NONCE_SIZE] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        // Use a random nonce to avoid conflicts with other tests
+        use rand::RngCore;
+        let mut nonce: [u8; NONCE_SIZE] = [0u8; NONCE_SIZE];
+        rand::rngs::OsRng.fill_bytes(&mut nonce[..]);
 
         // First registration should succeed
         let result1 = check_and_register_nonce(&nonce);
