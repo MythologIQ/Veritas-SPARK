@@ -441,3 +441,18 @@ impl IpcHandler {
         Ok(())
     }
 }
+
+/// Map a worker error string to a structured `InferenceErrorCode`.
+///
+/// The worker stringifies `engine::InferenceError` variants. We classify by
+/// matching known prefixes so callers can distinguish admission rejections
+/// (retriable) from execution failures (not retriable without change).
+fn classify_worker_error(msg: &str) -> InferenceErrorCode {
+    if msg.contains("Memory limit exceeded") || msg.contains("queue full") || msg.contains("Queue full") {
+        InferenceErrorCode::AdmissionRejected
+    } else if msg.contains("Model not loaded") {
+        InferenceErrorCode::ModelNotLoaded
+    } else {
+        InferenceErrorCode::ExecutionFailed
+    }
+}

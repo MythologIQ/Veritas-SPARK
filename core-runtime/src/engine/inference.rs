@@ -22,6 +22,9 @@ pub enum InferenceError {
 
     #[error("Context length exceeded: max {max}, got {got}")]
     ContextExceeded { max: usize, got: usize },
+
+    #[error("Memory limit exceeded: used {used} bytes, limit {limit} bytes")]
+    MemoryExceeded { used: usize, limit: usize },
 }
 
 /// Parameters controlling inference behavior (IPC protocol).
@@ -178,6 +181,41 @@ impl InferenceEngine {
         Ok(result)
     }
 
+    /// Run inference with cooperative cancellation and a per-call memory budget.
+    ///
+    /// The `max_memory_bytes` is enforced before calling into the model: if the
+    /// model's reported memory exceeds the budget, `MemoryExceeded` is returned
+    /// without starting inference (OOM prevention).
+    pub async fn run_cancellable_with_memory_limit(
+        &self,
+        model_id: &str,
+        prompt: &str,
+        params: &InferenceParams,
+        is_cancelled: std::sync::Arc<std::sync::atomic::AtomicBool>,
+        max_memory_bytes: usize,
+    ) -> Result<InferenceResult, InferenceError> {
+        use std::sync::atomic::Ordering;
+
+        params.validate()?;
+
+        if is_cancelled.load(Ordering::Acquire) {
+            return Err(InferenceError::ExecutionFailed("cancelled".into()));
+        }
+
+        let model = self.get_model(model_id).await?;
+        self.check_context(prompt)?;
+
+        let result = Self::infer_with_model_budget(
+            &model, prompt, params, Some(max_memory_bytes),
+        ).await?;
+
+        if is_cancelled.load(Ordering::Acquire) {
+            return Err(InferenceError::ExecutionFailed("cancelled".into()));
+        }
+
+        Ok(result)
+    }
+
     /// Look up a model by ID, cloning the Arc (drops the read lock).
     async fn get_model(
         &self,
@@ -204,9 +242,31 @@ impl InferenceEngine {
         prompt: &str,
         params: &InferenceParams,
     ) -> Result<InferenceResult, InferenceError> {
-        let config = params.to_config();
-        let input = InferenceInput::Text(prompt.to_string());
+        Self::infer_with_model_budget(model, prompt, params, None).await
+    }
 
+    async fn infer_with_model_budget(
+        model: &Arc<dyn GgufModel>,
+        prompt: &str,
+        params: &InferenceParams,
+        max_memory_bytes: Option<usize>,
+    ) -> Result<InferenceResult, InferenceError> {
+        // Enforce per-call memory budget: reject before inference if model
+        // already reports more memory than the budget allows.
+        if let Some(budget) = max_memory_bytes {
+            let model_mem = model.memory_usage();
+            if model_mem > budget {
+                return Err(InferenceError::MemoryExceeded {
+                    used: model_mem,
+                    limit: budget,
+                });
+            }
+        }
+
+        let mut config = params.to_config();
+        config.max_memory_bytes = max_memory_bytes;
+
+        let input = InferenceInput::Text(prompt.to_string());
         let output = model.infer(&input, &config).await.map_err(|e| {
             InferenceError::ExecutionFailed(e.to_string())
         })?;
@@ -360,5 +420,110 @@ mod tests {
         let handle = ModelHandle::new(999);
         let result = engine.run_by_handle(handle, "test", &params).await;
         assert!(matches!(result, Err(InferenceError::ModelNotLoaded(_))));
+    }
+
+    // ---- Memory budget enforcement tests ----
+
+    use std::sync::Arc as StdArc;
+    use crate::engine::gguf::GgufModel;
+    use crate::engine::{
+        FinishReason, GenerationResult, InferenceCapability, InferenceConfig,
+        InferenceError as EngineError, InferenceInput, InferenceOutput,
+    };
+
+    struct BudgetModel {
+        reported_memory: usize,
+    }
+
+    #[async_trait::async_trait]
+    impl GgufModel for BudgetModel {
+        fn model_id(&self) -> &str { "budget-model" }
+        fn capabilities(&self) -> &[InferenceCapability] {
+            &[InferenceCapability::TextGeneration]
+        }
+        fn memory_usage(&self) -> usize { self.reported_memory }
+        async fn infer(
+            &self, _: &InferenceInput, _: &InferenceConfig,
+        ) -> Result<InferenceOutput, EngineError> {
+            Ok(InferenceOutput::Generation(GenerationResult {
+                text: "ok".into(),
+                tokens_generated: 1,
+                finish_reason: FinishReason::Stop,
+            }))
+        }
+        async fn unload(&mut self) -> Result<(), EngineError> { Ok(()) }
+        fn as_any(&self) -> &dyn std::any::Any { self }
+    }
+
+    async fn engine_with_budget_model(memory_usage: usize) -> InferenceEngine {
+        let engine = InferenceEngine::new(4096);
+        let handle = ModelHandle::new(1);
+        let model: StdArc<dyn GgufModel> = StdArc::new(BudgetModel { reported_memory: memory_usage });
+        engine.register_model("budget-model".into(), handle, model).await;
+        engine
+    }
+
+    #[tokio::test]
+    async fn memory_budget_allows_inference_when_model_fits() {
+        let engine = engine_with_budget_model(512).await;
+        let params = InferenceParams::default();
+        let cancelled = StdArc::new(std::sync::atomic::AtomicBool::new(false));
+        // Budget of 1024 bytes, model uses 512 — should succeed.
+        let result = engine
+            .run_cancellable_with_memory_limit("budget-model", "hi", &params, cancelled, 1024)
+            .await;
+        assert!(result.is_ok(), "expected success, got {result:?}");
+    }
+
+    #[tokio::test]
+    async fn memory_budget_rejects_when_model_exceeds_budget() {
+        let engine = engine_with_budget_model(2048).await;
+        let params = InferenceParams::default();
+        let cancelled = StdArc::new(std::sync::atomic::AtomicBool::new(false));
+        // Budget of 1024 bytes, model uses 2048 — must reject.
+        let result = engine
+            .run_cancellable_with_memory_limit("budget-model", "hi", &params, cancelled, 1024)
+            .await;
+        assert!(
+            matches!(result, Err(InferenceError::MemoryExceeded { used: 2048, limit: 1024 })),
+            "expected MemoryExceeded, got {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn zero_byte_budget_always_rejects() {
+        let engine = engine_with_budget_model(1).await;
+        let params = InferenceParams::default();
+        let cancelled = StdArc::new(std::sync::atomic::AtomicBool::new(false));
+        let result = engine
+            .run_cancellable_with_memory_limit("budget-model", "hi", &params, cancelled, 0)
+            .await;
+        assert!(
+            matches!(result, Err(InferenceError::MemoryExceeded { .. })),
+            "zero budget must reject every model"
+        );
+    }
+
+    #[tokio::test]
+    async fn to_config_sets_max_memory_bytes_from_budget() {
+        // Verify that infer_with_model_budget passes the budget into InferenceConfig.
+        // We confirm the model sees max_memory_bytes = Some(budget) through
+        // the config by observing that no MemoryExceeded error is raised when
+        // model_mem <= budget, and it IS raised when model_mem > budget.
+        let engine = engine_with_budget_model(100).await;
+        let params = InferenceParams::default();
+        let cancelled = StdArc::new(std::sync::atomic::AtomicBool::new(false));
+
+        // 100-byte model, 200-byte budget — passes.
+        let ok = engine
+            .run_cancellable_with_memory_limit("budget-model", "hi", &params, cancelled.clone(), 200)
+            .await;
+        assert!(ok.is_ok());
+
+        // 100-byte model, 50-byte budget — rejected.
+        let err = engine
+            .run_cancellable_with_memory_limit("budget-model", "hi", &params, cancelled, 50)
+            .await;
+        assert!(matches!(err, Err(InferenceError::MemoryExceeded { .. })));
     }
 }

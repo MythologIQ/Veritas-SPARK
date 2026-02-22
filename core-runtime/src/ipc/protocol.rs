@@ -605,6 +605,43 @@ mod tests {
         assert!(response.finished);
         assert!(response.error.is_some());
         assert!(response.output.is_empty());
+        // Default error() uses ExecutionFailed code.
+        assert_eq!(response.error_code, Some(InferenceErrorCode::ExecutionFailed));
+    }
+
+    #[test]
+    fn test_inference_response_success_has_no_error_code() {
+        let r = InferenceResponse::success(RequestId(2), "text".into(), 3, true);
+        assert!(r.error.is_none());
+        assert!(r.error_code.is_none());
+    }
+
+    #[test]
+    fn test_inference_response_error_coded_admission_rejected() {
+        let r = InferenceResponse::error_coded(
+            RequestId(3),
+            "Memory limit exceeded".into(),
+            InferenceErrorCode::AdmissionRejected,
+        );
+        assert_eq!(r.error_code, Some(InferenceErrorCode::AdmissionRejected));
+        assert!(r.error.is_some());
+    }
+
+    #[test]
+    fn test_inference_error_code_serializes() {
+        let r = InferenceResponse::error_coded(
+            RequestId(4),
+            "err".into(),
+            InferenceErrorCode::ModelNotLoaded,
+        );
+        let msg = IpcMessage::InferenceResponse(r);
+        let encoded = encode_message(&msg).unwrap();
+        let decoded = decode_message(&encoded).unwrap();
+        if let IpcMessage::InferenceResponse(resp) = decoded {
+            assert_eq!(resp.error_code, Some(InferenceErrorCode::ModelNotLoaded));
+        } else {
+            panic!("expected InferenceResponse");
+        }
     }
 
     #[test]

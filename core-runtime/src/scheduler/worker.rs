@@ -99,10 +99,20 @@ async fn execute_request(
 
     let start = std::time::Instant::now();
 
-    // run_cancellable checks cancellation before and after inference.
-    let result = engine
-        .run_cancellable(&model_id, &prompt, &params, cancelled)
-        .await;
+    // Run inference — if resource limits are active, pass the per-call memory
+    // budget so the engine can enforce it coherently with InferenceConfig.
+    let result = if let Some(limits) = resource_limits {
+        engine
+            .run_cancellable_with_memory_limit(
+                &model_id, &prompt, &params, cancelled,
+                limits.max_memory_per_call(),
+            )
+            .await
+    } else {
+        engine
+            .run_cancellable(&model_id, &prompt, &params, cancelled)
+            .await
+    };
     let latency_ms = start.elapsed().as_millis() as u64;
 
     match &result {

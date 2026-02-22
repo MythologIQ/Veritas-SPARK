@@ -114,6 +114,14 @@ pub struct ResourceGuard {
     inner: Arc<LimitsInner>,
 }
 
+impl std::fmt::Debug for ResourceGuard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ResourceGuard")
+            .field("memory_bytes", &self.memory_bytes)
+            .finish()
+    }
+}
+
 impl Drop for ResourceGuard {
     fn drop(&mut self) {
         self.inner.current_memory.fetch_sub(self.memory_bytes, Ordering::SeqCst);
