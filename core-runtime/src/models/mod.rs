@@ -4,6 +4,7 @@
 
 pub mod manifest;
 pub mod pool;
+pub mod pool_types;
 pub mod smart_loader;
 mod smart_loader_ops;
 pub mod smart_loader_types;

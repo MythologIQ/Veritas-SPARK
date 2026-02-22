@@ -31,12 +31,16 @@ pub struct SmartLoader {
     active_tier: Arc<RwLock<Option<ModelTier>>>,
     metrics: Arc<RwLock<SmartLoaderMetrics>>,
     load_semaphore: Semaphore,
-    load_callback: Option<Arc<LoadCallback>>,
+    load_callback: Arc<LoadCallback>,
     predicted_next: Arc<RwLock<Option<String>>>,
 }
 
 impl SmartLoader {
-    pub fn new(config: SmartLoaderConfig) -> Self {
+    /// Create a new SmartLoader with a required load callback.
+    ///
+    /// The callback is invoked to produce `ModelHandle` values when
+    /// a model needs to be loaded from disk.
+    pub fn new(config: SmartLoaderConfig, load_callback: LoadCallback) -> Self {
         let max_loads = config.max_concurrent_loads;
         Self {
             config,
@@ -44,14 +48,9 @@ impl SmartLoader {
             active_tier: Arc::new(RwLock::new(None)),
             metrics: Arc::new(RwLock::new(SmartLoaderMetrics::default())),
             load_semaphore: Semaphore::new(max_loads),
-            load_callback: None,
+            load_callback: Arc::new(load_callback),
             predicted_next: Arc::new(RwLock::new(None)),
         }
-    }
-
-    /// Set the callback for actual model loading.
-    pub fn set_load_callback(&mut self, callback: LoadCallback) {
-        self.load_callback = Some(Arc::new(callback));
     }
 
     /// Register a model (zero overhead).
@@ -132,7 +131,7 @@ impl SmartLoader {
         super::smart_loader_ops::preload_background(
             self.models.clone(),
             model_id,
-            self.load_callback.clone(),
+            Arc::clone(&self.load_callback),
         );
     }
 
@@ -197,7 +196,7 @@ impl SmartLoader {
         super::smart_loader_ops::load_sync(
             &self.models,
             model_id,
-            self.load_callback.as_ref(),
+            &self.load_callback,
             &self.active_tier,
             &self.load_semaphore,
         )

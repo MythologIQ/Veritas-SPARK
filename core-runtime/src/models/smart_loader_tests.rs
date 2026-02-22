@@ -4,6 +4,7 @@
 
 use super::*;
 use std::io::Write;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 use tempfile::NamedTempFile;
 
@@ -14,9 +15,18 @@ fn create_test_model(size: usize) -> NamedTempFile {
     file
 }
 
+/// Create a test callback that returns sequential handle IDs.
+fn test_callback() -> LoadCallback {
+    let counter = std::sync::Arc::new(AtomicU64::new(100));
+    Box::new(move |_path| {
+        let id = counter.fetch_add(1, Ordering::SeqCst);
+        Ok(ModelHandle::new(id))
+    })
+}
+
 #[tokio::test]
 async fn test_register_zero_overhead() {
-    let loader = SmartLoader::new(SmartLoaderConfig::default());
+    let loader = SmartLoader::new(SmartLoaderConfig::default(), test_callback());
     let file = create_test_model(1_000_000);
 
     loader
@@ -32,7 +42,7 @@ async fn test_register_zero_overhead() {
 
 #[tokio::test]
 async fn test_semantic_hint_quick_query() {
-    let loader = SmartLoader::new(SmartLoaderConfig::default());
+    let loader = SmartLoader::new(SmartLoaderConfig::default(), test_callback());
 
     let light = create_test_model(100_000);
     let quality = create_test_model(200_000);
@@ -52,7 +62,7 @@ async fn test_semantic_hint_quick_query() {
 
 #[tokio::test]
 async fn test_cache_hit_fast() {
-    let loader = SmartLoader::new(SmartLoaderConfig::default());
+    let loader = SmartLoader::new(SmartLoaderConfig::default(), test_callback());
     let file = create_test_model(100_000);
 
     loader
@@ -76,7 +86,7 @@ async fn test_cache_hit_fast() {
 
 #[tokio::test]
 async fn test_tier_based_hints() {
-    let loader = SmartLoader::new(SmartLoaderConfig::default());
+    let loader = SmartLoader::new(SmartLoaderConfig::default(), test_callback());
 
     let light = create_test_model(100);
     let balanced = create_test_model(100);
@@ -94,4 +104,20 @@ async fn test_tier_based_hints() {
 
     loader.hint(LoadHint::PreferModel { tier: ModelTier::Balanced }).await;
     assert_eq!(loader.status().await.predicted_next, Some("b".to_string()));
+}
+
+#[tokio::test]
+async fn test_callback_is_required() {
+    // Callback produces valid handles — no placeholder path exists.
+    let loader = SmartLoader::new(SmartLoaderConfig::default(), test_callback());
+    let file = create_test_model(1_000);
+
+    loader
+        .register("cb".to_string(), file.path().to_path_buf(), ModelTier::Light)
+        .await
+        .unwrap();
+
+    let handle = loader.get("cb").await.unwrap();
+    // Handle comes from our callback (starts at 100).
+    assert!(handle.id() >= 100);
 }

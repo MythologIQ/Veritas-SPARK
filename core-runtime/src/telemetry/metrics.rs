@@ -44,6 +44,21 @@ pub fn init_metrics() {
         "core_admission_rejections_total",
         "Requests rejected before inference due to resource limits"
     );
+
+    // Model pool warm-switch latency
+    describe_histogram!(
+        "core_model_switch_latency_seconds",
+        "Model pool warm-switch latency in seconds"
+    );
+}
+
+/// Record model pool warm-switch latency.
+pub fn record_model_switch_latency(model_id: &str, latency_secs: f64) {
+    histogram!(
+        "core_model_switch_latency_seconds",
+        "model" => model_id.to_string()
+    )
+    .record(latency_secs);
 }
 
 /// Record a successful inference request.

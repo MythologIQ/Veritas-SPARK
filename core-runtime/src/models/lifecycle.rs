@@ -145,6 +145,16 @@ impl ModelLifecycle {
     pub async fn count(&self) -> usize {
         self.index.read().await.id_to_handle.len()
     }
+
+    /// Validate that a handle exists in both the lookup index and the registry.
+    ///
+    /// Returns `false` if the handle is stale (present in one but not the other,
+    /// or absent from both).
+    pub async fn validate_handle(&self, handle: &ModelHandle) -> bool {
+        let in_index = self.index.read().await.handle_to_id.contains_key(&handle.id());
+        let in_registry = self.registry.contains(*handle).await;
+        in_index && in_registry
+    }
 }
 
 #[cfg(test)]

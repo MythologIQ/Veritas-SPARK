@@ -3,20 +3,18 @@
 //! Extracted from `smart_loader.rs` for Section 4 compliance.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::RwLock;
 
-use super::registry::ModelHandle;
-use super::smart_loader::{SmartLoaderError};
+use super::smart_loader::SmartLoaderError;
 use super::smart_loader_types::*;
 
 /// Execute background preload for a model.
 pub(super) fn preload_background(
     models: Arc<RwLock<HashMap<String, ModelEntry>>>,
     model_id: &str,
-    callback: Option<Arc<LoadCallback>>,
+    callback: Arc<LoadCallback>,
 ) {
     let model_id = model_id.to_string();
 
@@ -32,7 +30,7 @@ pub(super) fn preload_background(
         };
 
         let start = Instant::now();
-        let result = execute_load(&path, callback.as_deref());
+        let result = callback(&path);
         let load_ms = start.elapsed().as_millis() as u64;
 
         let mut models = models.write().await;
@@ -55,7 +53,7 @@ pub(super) fn preload_background(
 pub(super) async fn load_sync(
     models: &RwLock<HashMap<String, ModelEntry>>,
     model_id: &str,
-    callback: Option<&Arc<LoadCallback>>,
+    callback: &Arc<LoadCallback>,
     active_tier: &RwLock<Option<ModelTier>>,
     semaphore: &tokio::sync::Semaphore,
 ) -> Result<(), SmartLoaderError> {
@@ -76,7 +74,7 @@ pub(super) async fn load_sync(
     };
 
     let start = Instant::now();
-    let result = execute_load(&path, callback.map(|c| c.as_ref()));
+    let result = callback(&path);
     let load_ms = start.elapsed().as_millis() as u64;
 
     let mut models = models.write().await;
@@ -96,20 +94,5 @@ pub(super) async fn load_sync(
             entry.state = LoadState::Failed;
             Err(SmartLoaderError::LoadFailed(e))
         }
-    }
-}
-
-/// Execute a model load via callback or mmap fallback.
-fn execute_load(path: &PathBuf, callback: Option<&LoadCallback>) -> Result<ModelHandle, String> {
-    if let Some(cb) = callback {
-        cb(path)
-    } else {
-        std::fs::File::open(path)
-            .and_then(|f| unsafe { memmap2::Mmap::map(&f) })
-            .map(|mmap| {
-                let _ = mmap.get(0);
-                ModelHandle::new(1)
-            })
-            .map_err(|e| e.to_string())
     }
 }

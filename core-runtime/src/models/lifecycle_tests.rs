@@ -171,6 +171,34 @@ async fn multiple_models_independent() {
 }
 
 #[tokio::test]
+async fn validate_handle_returns_true_for_loaded_model() {
+    let lc = make_lifecycle();
+    let model = MockModel::new("valid", 512);
+    let meta = make_metadata("valid", 512);
+
+    let handle = lc.load("valid".into(), meta, model).await.unwrap();
+    assert!(lc.validate_handle(&handle).await);
+}
+
+#[tokio::test]
+async fn validate_handle_returns_false_for_unloaded_model() {
+    let lc = make_lifecycle();
+    let model = MockModel::new("temp", 256);
+    let meta = make_metadata("temp", 256);
+
+    let handle = lc.load("temp".into(), meta, model).await.unwrap();
+    lc.unload("temp").await.unwrap();
+    assert!(!lc.validate_handle(&handle).await);
+}
+
+#[tokio::test]
+async fn validate_handle_returns_false_for_bogus_handle() {
+    let lc = make_lifecycle();
+    let bogus = ModelHandle::new(9999);
+    assert!(!lc.validate_handle(&bogus).await);
+}
+
+#[tokio::test]
 async fn concurrent_load_same_model_exactly_one_wins() {
     let lc = Arc::new(make_lifecycle());
     let n = 10;
