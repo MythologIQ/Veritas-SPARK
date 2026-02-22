@@ -67,7 +67,7 @@ use ipc::{ConnectionConfig, ConnectionPool, IpcHandler, IpcHandlerConfig, Sessio
 use memory::{
     ContextCache, ContextCacheConfig, GpuMemory, GpuMemoryConfig, MemoryPool, MemoryPoolConfig,
 };
-use models::{ModelLoader, ModelRegistry};
+use models::{ModelLifecycle, ModelLoader, ModelRegistry};
 use scheduler::{
     BatchConfig, BatchProcessor, OutputCache, OutputCacheConfig, RequestQueue, RequestQueueConfig,
 };
@@ -120,6 +120,7 @@ pub struct Runtime {
     pub model_loader: ModelLoader,
     pub model_registry: Arc<ModelRegistry>,
     pub inference_engine: Arc<InferenceEngine>,
+    pub model_lifecycle: Arc<ModelLifecycle>,
     pub request_queue: Arc<RequestQueue>,
     pub batch_processor: BatchProcessor,
     pub ipc_handler: IpcHandler,
@@ -149,6 +150,10 @@ impl Runtime {
 
         let session_auth = Arc::new(SessionAuth::new(&config.auth_token, config.session_timeout));
         let inference_engine = Arc::new(inference_engine);
+        let model_lifecycle = Arc::new(ModelLifecycle::new(
+            model_registry.clone(),
+            Arc::clone(&inference_engine),
+        ));
         let ipc_handler = IpcHandler::new(
             session_auth,
             request_queue.clone(),
@@ -168,6 +173,7 @@ impl Runtime {
             model_loader,
             model_registry,
             inference_engine,
+            model_lifecycle,
             request_queue,
             batch_processor,
             ipc_handler,
