@@ -1,0 +1,8 @@
+{
+  "queue_drain_time_to_leq_5_pending_seconds": 20,
+  "queue_monotonic_growth_detected_30m": false,
+  "queue_full_rate_at_70pct_target_load": 0.005,
+  "cancel_to_terminal_response_p95_ms": 200,
+  "availability_1h": 0.80,
+  "dequeue_over_enqueue_ratio_at_70pct_load": 1.08
+}

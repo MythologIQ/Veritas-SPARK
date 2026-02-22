@@ -1,0 +1,27 @@
+{
+  "queue_drain_time_to_leq_5_pending_seconds": 20,
+  "queue_monotonic_growth_detected_30m": false,
+  "queue_full_rate_at_70pct_target_load": 0.005,
+  "cancel_to_terminal_response_p95_ms": 200,
+  "availability_1h": 0.9995,
+  "dequeue_over_enqueue_ratio_at_70pct_load": 1.08,
+
+  "config_fidelity_ratio": 1.0,
+  "over_cap_request_reject_correctness": 1.0,
+  "uncontrolled_oom_count_1h": 0,
+  "p99_latency_regression_vs_p0": 0.08,
+  "throughput_regression_vs_p0": 0.06,
+
+  "model_sharding_implementation_complete": true,
+  "throughput_uplift_7b_vs_p1_gpu": 3.2,
+  "load_infer_unload_successful_cycles_13b_plus": 120,
+  "scaling_efficiency_2gpu_vs_1gpu": 1.7,
+  "scaling_efficiency_4gpu_vs_1gpu": 2.9,
+  "p99_inflation_80pct_vs_50pct_load": 1.4,
+
+  "long_context_completion_rate": 0.992,
+  "uncontrolled_oom_count_24h": 0,
+  "latency_stability_p99_over_p50": 2.7,
+  "admission_reject_typed_ratio": 1.0,
+  "canary_rollback_decision_time_windows": 2
+}

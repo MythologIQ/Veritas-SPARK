@@ -1,0 +1,229 @@
+version: "1.0"
+name: "gg-core-scalability-gates"
+updated_at: "2026-02-22"
+status: "planned"
+owners:
+  - "runtime-engineering"
+  - "platform-engineering"
+  - "release-engineering"
+
+metadata:
+  baseline_sources:
+    - path: "docs/BENCHMARKS.md"
+      note: "0.5B Q4 baseline and model-size scaling guidance"
+    - path: "docs/operations/PERFORMANCE_BASELINES.md"
+      note: "infrastructure overhead baseline"
+  result_artifacts:
+    required:
+      - "build_sha"
+      - "hardware_manifest"
+      - "effective_runtime_config"
+      - "raw_metrics_json"
+      - "run_timestamp_utc"
+
+workload_matrix:
+  model_tiers: ["0.5B", "1.5B", "3B", "7B", "13B_plus"]
+  quantization: ["Q4_baseline", "deployment_target"]
+  context_sizes: [512, 2048, 4096, 8192, 16384]
+  concurrency_levels: [1, 4, 16, 64]
+  modes: ["non_streaming", "streaming", "mixed"]
+  hardware_profiles:
+    - "cpu_baseline"
+    - "gpu_1"
+    - "gpu_2"
+    - "gpu_4"
+
+metrics:
+  throughput:
+    - "tokens_per_second"
+    - "requests_per_second"
+  latency:
+    - "p50_ms"
+    - "p95_ms"
+    - "p99_ms"
+  queue:
+    - "queue_depth_avg"
+    - "queue_depth_max"
+    - "queue_wait_p95_ms"
+    - "queue_wait_p99_ms"
+  errors:
+    - "admission_reject_rate"
+    - "inference_failure_rate"
+    - "timeout_rate"
+    - "queue_full_rate"
+  memory:
+    - "rss_bytes"
+    - "model_memory_bytes"
+    - "kv_memory_bytes"
+    - "gpu_memory_bytes"
+    - "peak_memory_bytes"
+  stability:
+    - "crash_count"
+    - "restart_count"
+    - "drain_shutdown_success_rate"
+
+estimated_stage_throughput_cpu_tok_s:
+  current:
+    model_0_5B_q4: 40
+    model_1_5B_q4: 15
+    model_3B_q4: 8
+    model_7B_q4: 4
+  p0:
+    model_0_5B_q4: [38, 42]
+    model_1_5B_q4: [14, 16]
+    model_3B_q4: [7, 9]
+    model_7B_q4: [3.5, 4.5]
+  p1:
+    model_0_5B_q4: [36, 41]
+    model_1_5B_q4: [13, 15]
+    model_3B_q4: [7, 8.5]
+    model_7B_q4: [3.3, 4.2]
+  p2_gpu_multiplier_vs_p1:
+    model_0_5B_q4: "TBD_after_p2_wiring"
+    model_1_5B_q4: "TBD_after_p2_wiring"
+    model_3B_q4: "TBD_after_p2_wiring"
+    model_7B_q4: "TBD_after_p2_wiring"
+
+phases:
+  p0:
+    name: "correctness_recovery"
+    gates:
+      - id: "P0-G1"
+        metric: "queue_drain_time_to_leq_5_pending_seconds"
+        op: "<="
+        value: 30
+      - id: "P0-G2"
+        metric: "queue_monotonic_growth_detected_30m"
+        op: "=="
+        value: false
+      - id: "P0-G3"
+        metric: "queue_full_rate_at_70pct_target_load"
+        op: "<"
+        value: 0.01
+      - id: "P0-G4"
+        metric: "cancel_to_terminal_response_p95_ms"
+        op: "<="
+        value: 250
+      - id: "P0-G5"
+        metric: "availability_1h"
+        op: ">="
+        value: 0.999
+      - id: "P0-G6"
+        metric: "dequeue_over_enqueue_ratio_at_70pct_load"
+        op: ">="
+        value: 1.0
+
+  p1:
+    name: "guardrails_and_config_fidelity"
+    gates:
+      - id: "P1-G1"
+        metric: "config_fidelity_ratio"
+        op: "=="
+        value: 1.0
+      - id: "P1-G2"
+        metric: "over_cap_request_reject_correctness"
+        op: "=="
+        value: 1.0
+      - id: "P1-G3"
+        metric: "uncontrolled_oom_count_1h"
+        op: "=="
+        value: 0
+      - id: "P1-G4"
+        metric: "p99_latency_regression_vs_p0"
+        op: "<="
+        value: 0.10
+      - id: "P1-G5"
+        metric: "throughput_regression_vs_p0"
+        op: "<="
+        value: 0.10
+
+  p2:
+    name: "large_model_readiness"
+    prerequisites:
+      - id: "P2-PR1"
+        metric: "model_sharding_implementation_complete"
+        op: "=="
+        value: true
+    gates:
+      - id: "P2-G1"
+        metric: "throughput_uplift_7b_vs_p1_gpu"
+        op: ">="
+        value: 3.0
+      - id: "P2-G2"
+        metric: "load_infer_unload_successful_cycles_13b_plus"
+        op: ">="
+        value: 100
+      - id: "P2-G3"
+        metric: "scaling_efficiency_2gpu_vs_1gpu"
+        op: ">="
+        value: 1.6
+      - id: "P2-G4"
+        metric: "scaling_efficiency_4gpu_vs_1gpu"
+        op: ">="
+        value: 2.8
+      - id: "P2-G5"
+        metric: "p99_inflation_80pct_vs_50pct_load"
+        op: "<="
+        value: 1.5
+
+  p3:
+    name: "extreme_model_and_long_context"
+    gates:
+      - id: "P3-G1"
+        metric: "long_context_completion_rate"
+        op: ">="
+        value: 0.99
+      - id: "P3-G2"
+        metric: "uncontrolled_oom_count_24h"
+        op: "=="
+        value: 0
+      - id: "P3-G3"
+        metric: "latency_stability_p99_over_p50"
+        op: "<="
+        value: 3.0
+      - id: "P3-G4"
+        metric: "admission_reject_typed_ratio"
+        op: "=="
+        value: 1.0
+      - id: "P3-G5"
+        metric: "canary_rollback_decision_time_windows"
+        op: "<="
+        value: 2
+
+gate_evaluation:
+  mode: "all_required"
+  stop_on_first_failure: false
+  severity_map:
+    critical:
+      - "uncontrolled_oom_count_1h"
+      - "uncontrolled_oom_count_24h"
+      - "queue_monotonic_growth_detected_30m"
+      - "availability_1h"
+    high:
+      - "throughput_uplift_7b_vs_p1_gpu"
+      - "scaling_efficiency_2gpu_vs_1gpu"
+      - "scaling_efficiency_4gpu_vs_1gpu"
+      - "long_context_completion_rate"
+    medium:
+      - "p99_latency_regression_vs_p0"
+      - "throughput_regression_vs_p0"
+      - "latency_stability_p99_over_p50"
+
+remediation_policy:
+  on_gate_fail:
+    - step: "freeze_phase_promotion"
+    - step: "open_remediation_incident"
+    - step: "assign_owner_and_due_date"
+    - step: "run_root_cause_and_fix"
+    - step: "rerun_failed_gate_and_neighbor_gates"
+    - step: "update_baseline_if_change_is_intentional"
+  remediation_sla:
+    critical_days: 2
+    high_days: 5
+    medium_days: 10
+  revalidation:
+    required_runs_after_fix: 3
+    must_include:
+      - "original_failure_scenario"
+      - "adjacent_load_tier"
+      - "one_long_soak_run"

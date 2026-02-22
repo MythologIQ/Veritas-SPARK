@@ -1,0 +1,7 @@
+{
+  "config_fidelity_ratio": 1.0,
+  "over_cap_request_reject_correctness": 1.0,
+  "uncontrolled_oom_count_1h": 0,
+  "p99_latency_regression_vs_p0": 0.25,
+  "throughput_regression_vs_p0": 0.06
+}

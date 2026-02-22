@@ -1,0 +1,8 @@
+{
+  "model_sharding_implementation_complete": true,
+  "throughput_uplift_7b_vs_p1_gpu": 2.0,
+  "load_infer_unload_successful_cycles_13b_plus": 120,
+  "scaling_efficiency_2gpu_vs_1gpu": 1.7,
+  "scaling_efficiency_4gpu_vs_1gpu": 2.9,
+  "p99_inflation_80pct_vs_50pct_load": 1.4
+}
