@@ -12,6 +12,7 @@ use super::error::{set_last_error, CoreErrorCode};
 use super::inference::params_from_c;
 use super::runtime::CoreRuntime;
 use super::types::CoreInferenceParams;
+use crate::scheduler::Priority;
 
 /// Streaming callback signature
 /// Return false to cancel streaming
@@ -114,7 +115,19 @@ pub unsafe extern "C" fn core_infer_streaming(
     };
 
     let result = rt.tokio.block_on(async {
-        rt.inner.inference_engine.run(model_str, prompt_str, &rust_params).await
+        let (_id, rx) = rt.inner.request_queue
+            .enqueue_with_response(
+                model_str.to_string(),
+                prompt_str.to_string(),
+                rust_params,
+                Priority::Normal,
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+
+        rx.await
+            .map_err(|_| "worker dropped channel".to_string())?
+            .map_err(|e| e.to_string())
     });
 
     match result {
@@ -127,8 +140,9 @@ pub unsafe extern "C" fn core_infer_streaming(
             }
         }
         Err(e) => {
-            invoker.invoke("", true, Some(&e.to_string()));
-            e.into()
+            invoker.invoke("", true, Some(&e));
+            set_last_error(&e);
+            CoreErrorCode::InferenceFailed
         }
     }
 }

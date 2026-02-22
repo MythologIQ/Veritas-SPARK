@@ -10,6 +10,7 @@ use super::error::{set_last_error, CoreErrorCode};
 use super::runtime::CoreRuntime;
 use super::types::{CoreInferenceParams, CoreInferenceResult};
 use crate::engine::InferenceParams;
+use crate::scheduler::Priority;
 
 /// Submit inference request (blocking, text-based)
 #[no_mangle]
@@ -61,7 +62,19 @@ pub unsafe extern "C" fn core_infer(
     let rust_params = params_from_c(c_params);
 
     let result = rt.tokio.block_on(async {
-        rt.inner.inference_engine.run(model_str, prompt_str, &rust_params).await
+        let (_id, rx) = rt.inner.request_queue
+            .enqueue_with_response(
+                model_str.to_string(),
+                prompt_str.to_string(),
+                rust_params,
+                Priority::Normal,
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+
+        rx.await
+            .map_err(|_| "worker dropped channel".to_string())?
+            .map_err(|e| e.to_string())
     });
 
     match result {
@@ -69,7 +82,10 @@ pub unsafe extern "C" fn core_infer(
             write_inference_result(&r, &mut *out_result);
             CoreErrorCode::Ok
         }
-        Err(e) => e.into(),
+        Err(e) => {
+            set_last_error(&e);
+            CoreErrorCode::InferenceFailed
+        }
     }
 }
 
